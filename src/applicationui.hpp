@@ -21,7 +21,7 @@
 
 #include <bb/cascades/Page>
 
-#include <bb/cascades/ArrayDataModel>
+#include <bb/cascades/QListDataModel>
 #include <bb/cascades/ListView>
 
 #include <bb/system/InvokeManager>
@@ -49,7 +49,7 @@ private slots:
 private:
 void initAppUI();
 void initCardUI();
-ArrayDataModel listViewDataModel;
+QVariantListDataModel listViewDataModel;
 Page *rootPage;
 ListView *list;
 bb::system::InvokeManager *invokemanager;

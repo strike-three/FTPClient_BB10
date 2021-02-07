@@ -20,6 +20,7 @@
 #include <bb/cascades/Page>
 #include <bb/cascades/Container>
 
+#include <src/ServerListItemFactory.h>
 
 using namespace bb::cascades;
 
@@ -56,11 +57,18 @@ ApplicationUI::ApplicationUI() :
 
 void ApplicationUI::initAppUI()
 {
+    QVariantMap map;
+    ServerListItemFactory *serverListItemFactory = new ServerListItemFactory();
+
     this->list = new ListView();
     Container *appContainer = new Container();
     this->list->setDataModel(&this->listViewDataModel);
+    this->list->setListItemProvider(serverListItemFactory);
     this->listViewDataModel.clear();
-    this->listViewDataModel.append("bajirao");
+
+    map["servername"] = "bajirao";
+
+    this->listViewDataModel << map;
 
     appContainer->add(this->list);
 
@@ -71,12 +79,18 @@ void ApplicationUI::initAppUI()
 
 void ApplicationUI::initCardUI()
 {
+    QVariantMap map;
+
     this->list = new ListView();
     Container *cardContainer = new Container();
+    ServerListItemFactory *serverListItemFactory = new ServerListItemFactory();
 
     this->list->setDataModel(&this->listViewDataModel);
+    this->list->setListItemProvider(serverListItemFactory);
     this->listViewDataModel.clear();
-    this->listViewDataModel.append("ftp.strato.de");
+    map["servername"] = "ftp.strato.de";
+
+    this->listViewDataModel << map;
 
     cardContainer->add(this->list);
 
