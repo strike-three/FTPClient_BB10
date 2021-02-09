@@ -10,6 +10,7 @@
 
 #include <bb/cascades/CustomListItem>
 #include <bb/cascades/Label>
+#include <bb/cascades/ImageView>
 
 using namespace bb::cascades;
 
@@ -18,10 +19,12 @@ class ServerListItem: public bb::cascades::CustomListItem
 public:
     ServerListItem();
 
-    void updateItem(const QString text);
+    void updateListItem(const QVariant &data);
 
 private:
-    Label *label;
+    Label *serverName;
+    Label *serverUrl;
+    ImageView *statusImage;
 };
 
 #endif /* SERVERLISTITEM_H_ */

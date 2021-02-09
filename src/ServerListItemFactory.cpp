@@ -31,7 +31,6 @@ void ServerListItemFactory::updateItem(ListView* list, VisualNode *listItem, con
     Q_UNUSED(indexPath);
     Q_UNUSED(type);
 
-    QVariantMap map = data.value<QVariantMap>();
     ServerListItem *serverListItem = static_cast<ServerListItem *>(listItem);
-    serverListItem->updateItem(map["servername"].toString());
+    serverListItem->updateListItem(data);
 }

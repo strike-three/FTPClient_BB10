@@ -62,14 +62,30 @@ void ApplicationUI::initAppUI()
 
     this->list = new ListView();
     Container *appContainer = new Container();
+    UIConfig *ui = appContainer->ui();
+    appContainer->setLeftPadding(ui->du(1));
+    appContainer->setRightPadding(ui->du(1));
     this->list->setDataModel(&this->listViewDataModel);
     this->list->setListItemProvider(serverListItemFactory);
     this->listViewDataModel.clear();
 
-    map["servername"] = "bajirao";
+    map["servername"] = QVariant("bajirao");
+    map["protocol"] = QVariant("ftp");
+    map["port"] = QVariant(21);
+    map["url"] = QVariant("bajirao");
+    map["password"] = QVariant("test123");
+    map["connstatus"] = QVariant(true);
 
     this->listViewDataModel << map;
 
+    map["servername"] = QVariant("Strato");
+    map["protocol"] = QVariant("ftp");
+    map["port"] = QVariant(21);
+    map["url"] = QVariant("ftp.strato.de");
+    map["password"] = QVariant("Gayatri_01");
+    map["connstatus"] = QVariant(false);
+
+    this->listViewDataModel << map;
     appContainer->add(this->list);
 
     this->rootPage->setContent(appContainer);
@@ -88,7 +104,22 @@ void ApplicationUI::initCardUI()
     this->list->setDataModel(&this->listViewDataModel);
     this->list->setListItemProvider(serverListItemFactory);
     this->listViewDataModel.clear();
-    map["servername"] = "ftp.strato.de";
+
+    map["servername"] = QVariant("bajirao");
+    map["protocol"] = QVariant("ftp");
+    map["port"] = QVariant(21);
+    map["url"] = QVariant("bajirao");
+    map["password"] = QVariant("test123");
+    map["connstatus"] = QVariant(true);
+
+    this->listViewDataModel << map;
+
+    map["servername"] = QVariant("Strato");
+    map["protocol"] = QVariant("ftp");
+    map["port"] = QVariant(21);
+    map["url"] = QVariant("ftp.strato.de");
+    map["password"] = QVariant("Gayatri_01");
+    map["connstatus"] = QVariant(false);
 
     this->listViewDataModel << map;
 
