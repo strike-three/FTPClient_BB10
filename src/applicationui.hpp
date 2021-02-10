@@ -17,6 +17,8 @@
 #ifndef ApplicationUI_HPP_
 #define ApplicationUI_HPP_
 
+#include <stdint.h>
+
 #include <QObject>
 
 #include <bb/cascades/Page>
@@ -49,6 +51,7 @@ private slots:
 private:
 void initAppUI();
 void initCardUI();
+int32_t readAccountInfo();
 QVariantListDataModel listViewDataModel;
 Page *rootPage;
 ListView *list;

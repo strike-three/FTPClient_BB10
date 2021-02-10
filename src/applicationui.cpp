@@ -16,9 +16,12 @@
 
 #include "applicationui.hpp"
 
+#include <QDebug>
 #include <bb/cascades/Application>
 #include <bb/cascades/Page>
 #include <bb/cascades/Container>
+
+#include <bb/data/JsonDataAccess>
 
 #include <src/ServerListItemFactory.h>
 
@@ -68,24 +71,25 @@ void ApplicationUI::initAppUI()
     this->list->setDataModel(&this->listViewDataModel);
     this->list->setListItemProvider(serverListItemFactory);
     this->listViewDataModel.clear();
+    this->readAccountInfo();
 
-    map["servername"] = QVariant("bajirao");
-    map["protocol"] = QVariant("ftp");
-    map["port"] = QVariant(21);
-    map["url"] = QVariant("bajirao");
-    map["password"] = QVariant("test123");
-    map["connstatus"] = QVariant(true);
-
-    this->listViewDataModel << map;
-
-    map["servername"] = QVariant("Strato");
-    map["protocol"] = QVariant("ftp");
-    map["port"] = QVariant(21);
-    map["url"] = QVariant("ftp.strato.de");
-    map["password"] = QVariant("Gayatri_01");
-    map["connstatus"] = QVariant(false);
-
-    this->listViewDataModel << map;
+//    map["servername"] = QVariant("bajirao");
+//    map["protocol"] = QVariant("ftp");
+//    map["port"] = QVariant(21);
+//    map["url"] = QVariant("bajirao");
+//    map["password"] = QVariant("test123");
+//    map["connstatus"] = QVariant(true);
+//
+//    this->listViewDataModel << map;
+//
+//    map["servername"] = QVariant("Strato");
+//    map["protocol"] = QVariant("ftp");
+//    map["port"] = QVariant(21);
+//    map["url"] = QVariant("ftp.strato.de");
+//    map["password"] = QVariant("Gayatri_01");
+//    map["connstatus"] = QVariant(false);
+//
+//    this->listViewDataModel << map;
     appContainer->add(this->list);
 
     this->rootPage->setContent(appContainer);
@@ -104,24 +108,27 @@ void ApplicationUI::initCardUI()
     this->list->setDataModel(&this->listViewDataModel);
     this->list->setListItemProvider(serverListItemFactory);
     this->listViewDataModel.clear();
+    this->readAccountInfo();
 
-    map["servername"] = QVariant("bajirao");
-    map["protocol"] = QVariant("ftp");
-    map["port"] = QVariant(21);
-    map["url"] = QVariant("bajirao");
-    map["password"] = QVariant("test123");
-    map["connstatus"] = QVariant(true);
-
-    this->listViewDataModel << map;
-
-    map["servername"] = QVariant("Strato");
-    map["protocol"] = QVariant("ftp");
-    map["port"] = QVariant(21);
-    map["url"] = QVariant("ftp.strato.de");
-    map["password"] = QVariant("Gayatri_01");
-    map["connstatus"] = QVariant(false);
-
-    this->listViewDataModel << map;
+//    map["name"] = QVariant("bajirao");
+//    map["protocol"] = QVariant("ftp");
+//    map["port"] = QVariant(21);
+//    map["url"] = QVariant("bajirao");
+//    map["password"] = QVariant("test123");
+//    map["uname"] = "aranade";
+//    map["connstatus"] = QVariant(true);
+//
+//    this->listViewDataModel << map;
+//
+//    map["name"] = QVariant("Strato");
+//    map["protocol"] = QVariant("ftp");
+//    map["port"] = QVariant(21);
+//    map["url"] = QVariant("ftp.strato.de");
+//    map["uname"] = "amchyalagnache.photos";
+//    map["password"] = QVariant("Gayatri_01");
+//    map["connstatus"] = QVariant(false);
+//
+//    this->listViewDataModel << map;
 
     cardContainer->add(this->list);
 
@@ -129,6 +136,55 @@ void ApplicationUI::initCardUI()
     Application::instance()->setScene(this->rootPage);
 
 }
+
+int32_t ApplicationUI::readAccountInfo()
+{
+    QString filePath = QDir::currentPath() + "/app/native/assets/json/accounts.json";
+    QFile accountFile(filePath);
+    bb::data::JsonDataAccess data;
+    int32_t retval = 0;
+    int32_t i;
+    QVariant accountInfo;
+
+    if(!accountFile.open(QIODevice::ReadWrite | QIODevice::Text))
+    {
+        retval = -1;
+    }
+
+    if(retval == 0)
+    {
+        accountFile.close();
+
+        /* Load account data in List model */
+        accountInfo = data.load(filePath);
+
+        if(data.hasError())
+        {
+            qDebug()<<data.error();
+            retval = -1;
+        }
+    }
+
+    if(retval == 0)
+    {
+        QVariantList list = accountInfo.value<QVariantList>();
+        qDebug()<<"List size "<<list.size();
+        for(i = 0; i < list.size(); i = i + 1)
+        {
+            this->listViewDataModel << list.at(i).value<QVariantMap>();
+        }
+
+    }
+
+
+    if(retval < 0)
+    {
+        qDebug()<<"Error reading account file";
+    }
+
+    return 0;
+}
+
 void ApplicationUI::onInvoke(const bb::system::InvokeRequest& data)
 {
     Q_UNUSED(data);

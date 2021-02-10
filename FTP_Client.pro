@@ -2,6 +2,6 @@ APP_NAME = FTP_Client
 
 CONFIG += qt warn_on cascades10
 
-LIBS += -lbbsystem
+LIBS += -lbbsystem -lbbdata
 
 include(config.pri)
