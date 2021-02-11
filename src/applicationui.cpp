@@ -20,7 +20,12 @@
 #include <bb/cascades/Application>
 #include <bb/cascades/Page>
 #include <bb/cascades/Container>
+#include <bb/cascades/Color>
+#include <bb/cascades/DockLayout>
+#include <bb/cascades/StackLayout>
+#include <bb/cascades/ActionItem>
 
+#include <bb/cascades/NavigationPaneProperties>
 #include <bb/data/JsonDataAccess>
 
 #include <src/ServerListItemFactory.h>
@@ -32,8 +37,13 @@ ApplicationUI::ApplicationUI() :
 {
     this->rootPage = new Page();
 
+    this->navigationPane = new NavigationPane();
+
+    this->displayInfo = new bb::device::DisplayInfo();
     this->invokemanager = new bb::system::InvokeManager();
 
+    this->list = 0;
+    this->label = new Label();
     bool res = QObject::connect(this->invokemanager,
                                 SIGNAL(invoked(const bb::system::InvokeRequest&)),
                                 this,
@@ -49,6 +59,7 @@ ApplicationUI::ApplicationUI() :
             break;
 
         case bb::system::ApplicationStartupMode::InvokeCard:
+            this->initCardUI();
             break;
 
         default:
@@ -63,77 +74,93 @@ void ApplicationUI::initAppUI()
     QVariantMap map;
     ServerListItemFactory *serverListItemFactory = new ServerListItemFactory();
 
+
+    Container *listContainer = new Container();
+    listContainer->setBackground(Color::Yellow);
+    listContainer->setLayout(DockLayout::create());
+    listContainer->setHorizontalAlignment(HorizontalAlignment::Fill);
+    listContainer->setMinHeight(this->displayInfo->physicalSize().height() * 0.9);
+
+    this->label = new Label();
+    this->label->setHorizontalAlignment(HorizontalAlignment::Fill);
+
     this->list = new ListView();
-    Container *appContainer = new Container();
-    UIConfig *ui = appContainer->ui();
-    appContainer->setLeftPadding(ui->du(1));
-    appContainer->setRightPadding(ui->du(1));
+
+    listContainer->add(list);
     this->list->setDataModel(&this->listViewDataModel);
     this->list->setListItemProvider(serverListItemFactory);
     this->listViewDataModel.clear();
     this->readAccountInfo();
 
-//    map["servername"] = QVariant("bajirao");
-//    map["protocol"] = QVariant("ftp");
-//    map["port"] = QVariant(21);
-//    map["url"] = QVariant("bajirao");
-//    map["password"] = QVariant("test123");
-//    map["connstatus"] = QVariant(true);
-//
-//    this->listViewDataModel << map;
-//
-//    map["servername"] = QVariant("Strato");
-//    map["protocol"] = QVariant("ftp");
-//    map["port"] = QVariant(21);
-//    map["url"] = QVariant("ftp.strato.de");
-//    map["password"] = QVariant("Gayatri_01");
-//    map["connstatus"] = QVariant(false);
-//
-//    this->listViewDataModel << map;
-    appContainer->add(this->list);
 
+    Container *appContainer = new Container();
+    appContainer->setLayout(StackLayout::create()
+                            .orientation(LayoutOrientation::TopToBottom));
+    appContainer->setHorizontalAlignment(HorizontalAlignment::Fill);
+    appContainer->setVerticalAlignment(VerticalAlignment::Fill);
+    appContainer->setBackground(Color::LightGray);
+    UIConfig *ui = appContainer->ui();
+    appContainer->setLeftPadding(ui->du(1));
+    appContainer->setRightPadding(ui->du(1));
+
+
+    appContainer->add(listContainer);
+    appContainer->add(this->label);
     this->rootPage->setContent(appContainer);
-    Application::instance()->setScene(this->rootPage);
+
+    ActionItem *addServerAction = ActionItem::create()
+                                            .title("Add")
+                                            .image(Image("asset:///ic_add.png"))
+                                            .onTriggered(this, SLOT(addServerPage()));
+
+
+    this->rootPage->addAction(addServerAction, ActionBarPlacement::OnBar);
+
+    this->navigationPane->push(this->rootPage);
+    Application::instance()->setScene(this->navigationPane);
 
 }
 
 void ApplicationUI::initCardUI()
 {
     QVariantMap map;
-
-    this->list = new ListView();
-    Container *cardContainer = new Container();
     ServerListItemFactory *serverListItemFactory = new ServerListItemFactory();
 
+
+    Container *listContainer = new Container();
+    listContainer->setBackground(Color::Yellow);
+    listContainer->setLayout(DockLayout::create());
+    listContainer->setHorizontalAlignment(HorizontalAlignment::Fill);
+    listContainer->setMinHeight(this->displayInfo->physicalSize().height() * 0.9);
+
+    this->label = new Label();
+    this->label->setHorizontalAlignment(HorizontalAlignment::Fill);
+
+    this->list = new ListView();
+
+    listContainer->add(list);
     this->list->setDataModel(&this->listViewDataModel);
     this->list->setListItemProvider(serverListItemFactory);
     this->listViewDataModel.clear();
     this->readAccountInfo();
 
-//    map["name"] = QVariant("bajirao");
-//    map["protocol"] = QVariant("ftp");
-//    map["port"] = QVariant(21);
-//    map["url"] = QVariant("bajirao");
-//    map["password"] = QVariant("test123");
-//    map["uname"] = "aranade";
-//    map["connstatus"] = QVariant(true);
-//
-//    this->listViewDataModel << map;
-//
-//    map["name"] = QVariant("Strato");
-//    map["protocol"] = QVariant("ftp");
-//    map["port"] = QVariant(21);
-//    map["url"] = QVariant("ftp.strato.de");
-//    map["uname"] = "amchyalagnache.photos";
-//    map["password"] = QVariant("Gayatri_01");
-//    map["connstatus"] = QVariant(false);
-//
-//    this->listViewDataModel << map;
 
-    cardContainer->add(this->list);
+    Container *appContainer = new Container();
+    appContainer->setLayout(StackLayout::create()
+                            .orientation(LayoutOrientation::TopToBottom));
+    appContainer->setHorizontalAlignment(HorizontalAlignment::Fill);
+    appContainer->setVerticalAlignment(VerticalAlignment::Fill);
+    appContainer->setBackground(Color::LightGray);
+    UIConfig *ui = appContainer->ui();
+    appContainer->setLeftPadding(ui->du(1));
+    appContainer->setRightPadding(ui->du(1));
 
-    this->rootPage->setContent(cardContainer);
-    Application::instance()->setScene(this->rootPage);
+
+    appContainer->add(listContainer);
+    appContainer->add(this->label);
+    this->rootPage->setContent(appContainer);
+    this->navigationPane->push(this->rootPage);
+    Application::instance()->setScene(this->navigationPane);
 
 }
 
@@ -146,43 +173,36 @@ int32_t ApplicationUI::readAccountInfo()
     int32_t i;
     QVariant accountInfo;
 
-    if(!accountFile.open(QIODevice::ReadWrite | QIODevice::Text))
+    if(accountFile.exists())
     {
-        retval = -1;
-    }
-
-    if(retval == 0)
-    {
-        accountFile.close();
-
         /* Load account data in List model */
         accountInfo = data.load(filePath);
 
         if(data.hasError())
         {
+            this->label->setText(data.error().errorMessage());
             qDebug()<<data.error();
             retval = -1;
         }
-    }
 
-    if(retval == 0)
-    {
-        QVariantList list = accountInfo.value<QVariantList>();
-        qDebug()<<"List size "<<list.size();
-        for(i = 0; i < list.size(); i = i + 1)
+        if(retval == 0)
         {
-            this->listViewDataModel << list.at(i).value<QVariantMap>();
+            QVariantList list = accountInfo.value<QVariantList>();
+            this->label->setText(QString::number(list.size()) );
+            for(i = 0; i < list.size(); i = i + 1)
+            {
+                this->listViewDataModel << list.at(i).value<QVariantMap>();
+            }
         }
 
     }
 
-
-    if(retval < 0)
-    {
-        qDebug()<<"Error reading account file";
-    }
-
     return 0;
+}
+
+void ApplicationUI::addServerPage()
+{
+    this->label->setText("Add page");
 }
 
 void ApplicationUI::onInvoke(const bb::system::InvokeRequest& data)

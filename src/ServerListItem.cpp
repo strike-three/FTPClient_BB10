@@ -96,7 +96,7 @@ ServerListItem::ServerListItem()
 void ServerListItem::updateListItem(const QVariant &data)
 {
     QVariantMap map = data.value<QVariantMap>();
-    this->serverName->setText(map["servername"].toString());
+    this->serverName->setText(map["name"].toString());
     this->serverUrl->setText(map["url"].toString());
 
     if(map["connstatus"].toBool())

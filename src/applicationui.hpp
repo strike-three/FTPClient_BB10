@@ -22,12 +22,16 @@
 #include <QObject>
 
 #include <bb/cascades/Page>
+#include <bb/cascades/NavigationPane>
 
 #include <bb/cascades/QListDataModel>
 #include <bb/cascades/ListView>
+#include <bb/cascades/Label>
 
 #include <bb/system/InvokeManager>
 #include <bb/system/InvokeRequest>
+
+#include <bb/device/DisplayInfo>
 
 using namespace bb::cascades;
 
@@ -47,15 +51,19 @@ public:
 public slots:
     void onInvoke(const bb::system::InvokeRequest&);
 private slots:
+    void addServerPage();
 
 private:
 void initAppUI();
 void initCardUI();
 int32_t readAccountInfo();
 QVariantListDataModel listViewDataModel;
+NavigationPane* navigationPane;
 Page *rootPage;
 ListView *list;
+Label *label;
 bb::system::InvokeManager *invokemanager;
+bb::device::DisplayInfo *displayInfo;
 };
 
 #endif /* ApplicationUI_HPP_ */
