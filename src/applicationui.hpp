@@ -52,7 +52,8 @@ public slots:
     void onInvoke(const bb::system::InvokeRequest&);
 private slots:
     void addServerPage();
-
+    void pushFinished(bb::cascades::Page*);
+    void popFinished(bb::cascades::Page*);
 private:
 void initAppUI();
 void initCardUI();

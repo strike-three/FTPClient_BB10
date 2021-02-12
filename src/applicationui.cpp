@@ -24,6 +24,8 @@
 #include <bb/cascades/DockLayout>
 #include <bb/cascades/StackLayout>
 #include <bb/cascades/ActionItem>
+#include <bb/cascades/TextField>
+#include <bb/cascades/DropDown>
 
 #include <bb/cascades/NavigationPaneProperties>
 #include <bb/data/JsonDataAccess>
@@ -37,8 +39,6 @@ ApplicationUI::ApplicationUI() :
 {
     this->rootPage = new Page();
 
-    this->navigationPane = new NavigationPane();
-
     this->displayInfo = new bb::device::DisplayInfo();
     this->invokemanager = new bb::system::InvokeManager();
 
@@ -49,7 +49,22 @@ ApplicationUI::ApplicationUI() :
                                 this,
                                 SLOT(onInvoke(const bb::system::InvokeRequest&)));
 
-    Q_UNUSED(res);
+    Q_ASSERT(res);
+
+    this->navigationPane = new NavigationPane();
+
+    res = QObject::connect(this->navigationPane,
+                            SIGNAL(pushTransitionEnded(bb::cascades::Page*)),
+                            this,
+                            SLOT(pushFinished(bb::cascades::Page*)));
+    Q_ASSERT(res);
+
+    res = QObject::connect(this->navigationPane,
+                            SIGNAL(popTransitionEnded(bb::cascades::Page*)),
+                            this,
+                            SLOT(popFinished(bb::cascades::Page*)));
+    Q_ASSERT(res);
+
 
     switch(this->invokemanager->startupMode())
     {
@@ -202,7 +217,118 @@ int32_t ApplicationUI::readAccountInfo()
 
 void ApplicationUI::addServerPage()
 {
-    this->label->setText("Add page");
+    Page *addServerPage = Page::create().objectName("addServerPage");
+
+    ActionItem *backAction = ActionItem::create()
+                                .title("Back")
+                                .imageSource(QUrl("asset:///ic_previous.amd"))
+                                .onTriggered(this->navigationPane, SLOT(pop()));
+    addServerPage->setPaneProperties(NavigationPaneProperties::create()
+                                        .backButton(backAction));
+
+    this->navigationPane->push(addServerPage);
+}
+
+void ApplicationUI::pushFinished(bb::cascades::Page *page)
+{
+    if(page->objectName().compare("addServerPage") == 0)
+    {
+    Container *addServerContainer = Container::create()
+                                    .horizontal(HorizontalAlignment::Fill)
+                                    .vertical(VerticalAlignment::Fill)
+                                    .layout(StackLayout::create()
+                                            .orientation(LayoutOrientation::TopToBottom));
+    UIConfig *ui = addServerContainer->ui();
+    addServerContainer->setLeftPadding(ui->du(2));
+    addServerContainer->setRightPadding(ui->du(2));
+
+    Label *serverNameLabel = Label::create("Display Name")
+                                    .horizontal(HorizontalAlignment::Fill)
+                                    .bottomMargin(ui->du(1));
+    serverNameLabel->textStyle()->setFontSize(FontSize::Small);
+    addServerContainer->add(serverNameLabel);
+
+    TextField *serverName = TextField::create()
+                            .hintText("Work FTP")
+                            .bottomMargin(ui->du(2))
+                            .backgroundVisible(true)
+                            .clearButtonVisible(true);
+
+    addServerContainer->add(serverName);
+
+    Label *serverCredentials = Label::create("Server Credentials")
+                                    .horizontal(HorizontalAlignment::Fill)
+                                    .bottomMargin(ui->du(1));
+    serverCredentials->textStyle()->setFontSize(FontSize::Small);
+
+    TextField *serverUrl = TextField::create()
+                            .hintText("URL")
+                            .bottomMargin(ui->du(1))
+                            .backgroundVisible(true)
+                            .clearButtonVisible(true);
+
+    TextField *userName = TextField::create()
+                            .hintText("User name")
+                            .bottomMargin(ui->du(1))
+                            .backgroundVisible(true)
+                            .clearButtonVisible(true);
+
+    TextField *password = TextField::create()
+                            .hintText("Password")
+                            .bottomMargin(ui->du(1))
+                            .backgroundVisible(true)
+                            .clearButtonVisible(true)
+                            .inputMode(TextFieldInputMode::Password);
+
+
+    addServerContainer->add(serverCredentials);
+    addServerContainer->add(serverUrl);
+    addServerContainer->add(userName);
+    addServerContainer->add(password);
+
+//    Container protocolContainer = Container::create()
+//                                    .horizontal(HorizontalAlignment::Fill)
+//                                    .layout(StackLayout::create()
+//                                            .orientation(LayoutOrientation::LeftToRight))
+//                                    .top(ui->du(1));
+    Label *protocolLabel = Label::create("Protocol")
+                            .horizontal(HorizontalAlignment::Fill)
+                            .bottomMargin(ui->du(1));
+    protocolLabel->textStyle()->setFontSize(FontSize::Small);
+
+    addServerContainer->add(protocolLabel);
+
+    DropDown *protocol = DropDown::create()
+                                .title("Protocol")
+                                .bottomMargin(ui->du(2));
+    protocol->add(Option::create().text("FTP"));
+    protocol->add(Option::create().text("SFTP"));
+
+    addServerContainer->add(protocol);
+
+    Label *protocolPort = Label::create("Port")
+                            .horizontal(HorizontalAlignment::Fill)
+                            .bottomMargin(ui->du(1));
+    protocolPort->textStyle()->setFontSize(FontSize::Small);
+
+    TextField *port = TextField::create()
+                            .hintText("Port")
+                            .bottomMargin(ui->du(1))
+                            .backgroundVisible(true)
+                            .clearButtonVisible(true)
+                            .inputMode(TextFieldInputMode::NumbersAndPunctuation);
+
+    addServerContainer->add(protocolPort);
+    addServerContainer->add(port);
+
+    page->setContent(addServerContainer);
+    }
+}
+
+void ApplicationUI::popFinished(bb::cascades::Page *page)
+{
+    delete page;
+    this->label->setText("Pop finished");
 }
 
 void ApplicationUI::onInvoke(const bb::system::InvokeRequest& data)
