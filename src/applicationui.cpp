@@ -27,6 +27,7 @@
 #include <bb/cascades/TextField>
 #include <bb/cascades/DropDown>
 #include <bb/cascades/ScrollView>
+#include <bb/cascades/Divider>
 
 #include <bb/cascades/NavigationPaneProperties>
 #include <bb/data/JsonDataAccess>
@@ -255,8 +256,11 @@ void ApplicationUI::pushFinished(bb::cascades::Page *page)
                                 .bottomMargin(ui->du(2))
                                 .backgroundVisible(true)
                                 .clearButtonVisible(true);
+        serverName->input()->setSubmitKey(SubmitKey::Done);
+        serverName->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
         addServerContainer->add(serverName);
+        addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
 
         Label *serverCredentials = Label::create("Server Credentials")
                                         .horizontal(HorizontalAlignment::Fill)
@@ -268,12 +272,16 @@ void ApplicationUI::pushFinished(bb::cascades::Page *page)
                                 .bottomMargin(ui->du(1))
                                 .backgroundVisible(true)
                                 .clearButtonVisible(true);
+        serverUrl->input()->setSubmitKey(SubmitKey::Done);
+        serverUrl->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
         TextField *userName = TextField::create()
                                 .hintText("User name")
                                 .bottomMargin(ui->du(1))
                                 .backgroundVisible(true)
                                 .clearButtonVisible(true);
+        userName->input()->setSubmitKey(SubmitKey::Done);
+        userName->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
         TextField *password = TextField::create()
                                 .hintText("Password")
@@ -281,24 +289,19 @@ void ApplicationUI::pushFinished(bb::cascades::Page *page)
                                 .backgroundVisible(true)
                                 .clearButtonVisible(true)
                                 .inputMode(TextFieldInputMode::Password);
-
+        password->input()->setSubmitKey(SubmitKey::Done);
+        password->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
         addServerContainer->add(serverCredentials);
         addServerContainer->add(serverUrl);
         addServerContainer->add(userName);
         addServerContainer->add(password);
+        addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
 
-    //    Container protocolContainer = Container::create()
-    //                                    .horizontal(HorizontalAlignment::Fill)
-    //                                    .layout(StackLayout::create()
-    //                                            .orientation(LayoutOrientation::LeftToRight))
-    //                                    .top(ui->du(1));
         Label *protocolLabel = Label::create("Protocol")
                                 .horizontal(HorizontalAlignment::Fill)
                                 .bottomMargin(ui->du(1));
         protocolLabel->textStyle()->setFontSize(FontSize::Small);
-
-        addServerContainer->add(protocolLabel);
 
         DropDown *protocol = DropDown::create()
                                     .title("Protocol")
@@ -306,7 +309,10 @@ void ApplicationUI::pushFinished(bb::cascades::Page *page)
         protocol->add(Option::create().text("FTP"));
         protocol->add(Option::create().text("SFTP"));
 
+        addServerContainer->add(protocolLabel);
         addServerContainer->add(protocol);
+
+        addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
 
         Label *protocolPort = Label::create("Port")
                                 .horizontal(HorizontalAlignment::Fill)
@@ -319,9 +325,14 @@ void ApplicationUI::pushFinished(bb::cascades::Page *page)
                                 .backgroundVisible(true)
                                 .clearButtonVisible(true)
                                 .inputMode(TextFieldInputMode::NumbersAndPunctuation);
+        port->input()->setSubmitKey(SubmitKey::Done);
+        port->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Lose);
 
         addServerContainer->add(protocolPort);
         addServerContainer->add(port);
+
+        addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
+
         scrollview->setContent(addServerContainer);
         page->setContent(scrollview);
     }
