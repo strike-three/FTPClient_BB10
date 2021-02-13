@@ -35,6 +35,8 @@
 
 using namespace bb::cascades;
 
+#define FTP_PROTOCOL    0
+#define SFTP_PROTOCOL   1
 
 /*!
  * @brief Application UI object
@@ -51,12 +53,14 @@ public:
 public slots:
     void onInvoke(const bb::system::InvokeRequest&);
 private slots:
-    void addServerPage();
+    void addServerPressed();
     void pushFinished(bb::cascades::Page*);
     void popFinished(bb::cascades::Page*);
+    void onServerEntryEdit();
+    void onServerEntryDelete();
 private:
-void initAppUI();
-void initCardUI();
+void renderServerListPage(bb::cascades::Page*, bool);
+void renderAddServerPage(bb::cascades::Page*, bool, int);
 int32_t readAccountInfo();
 QVariantListDataModel listViewDataModel;
 NavigationPane* navigationPane;

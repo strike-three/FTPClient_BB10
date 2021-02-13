@@ -28,6 +28,8 @@
 #include <bb/cascades/DropDown>
 #include <bb/cascades/ScrollView>
 #include <bb/cascades/Divider>
+#include <bb/cascades/DeleteActionItem>
+#include <bb/cascades/ActionSet>
 
 #include <bb/cascades/NavigationPaneProperties>
 #include <bb/data/JsonDataAccess>
@@ -54,6 +56,7 @@ ApplicationUI::ApplicationUI() :
     Q_ASSERT(res);
 
     this->navigationPane = new NavigationPane();
+    Application::instance()->setScene(this->navigationPane);
 
     res = QObject::connect(this->navigationPane,
                             SIGNAL(pushTransitionEnded(bb::cascades::Page*)),
@@ -67,119 +70,32 @@ ApplicationUI::ApplicationUI() :
                             SLOT(popFinished(bb::cascades::Page*)));
     Q_ASSERT(res);
 
+    /* Read the accounts information and populate the listdatamodel*/
+    this->listViewDataModel.clear();
+    this->readAccountInfo();
 
     switch(this->invokemanager->startupMode())
     {
         case bb::system::ApplicationStartupMode::LaunchApplication:
         case bb::system::ApplicationStartupMode::InvokeApplication:
-            this->initAppUI();
+            this->rootPage->setObjectName("appLaunchPage");
+            this->label->setText("Launch");
+            renderServerListPage(this->rootPage, false);
             break;
 
         case bb::system::ApplicationStartupMode::InvokeCard:
-            this->initCardUI();
+            this->rootPage->setObjectName("cardLaunchPage");
+            this->label->setText("Card");
+            renderServerListPage(this->rootPage, true);
             break;
 
         default:
-            this->initAppUI();
+            this->rootPage->setObjectName("appLaunchPage");
+            renderServerListPage(this->rootPage, false);
             break;
     }
 }
 
-
-void ApplicationUI::initAppUI()
-{
-    QVariantMap map;
-    ServerListItemFactory *serverListItemFactory = new ServerListItemFactory();
-
-
-    Container *listContainer = new Container();
-    listContainer->setBackground(Color::Yellow);
-    listContainer->setLayout(DockLayout::create());
-    listContainer->setHorizontalAlignment(HorizontalAlignment::Fill);
-    listContainer->setMinHeight(this->displayInfo->physicalSize().height() * 0.9);
-
-    this->label = new Label();
-    this->label->setHorizontalAlignment(HorizontalAlignment::Fill);
-
-    this->list = new ListView();
-
-    listContainer->add(list);
-    this->list->setDataModel(&this->listViewDataModel);
-    this->list->setListItemProvider(serverListItemFactory);
-    this->listViewDataModel.clear();
-    this->readAccountInfo();
-
-
-    Container *appContainer = new Container();
-    appContainer->setLayout(StackLayout::create()
-                            .orientation(LayoutOrientation::TopToBottom));
-    appContainer->setHorizontalAlignment(HorizontalAlignment::Fill);
-    appContainer->setVerticalAlignment(VerticalAlignment::Fill);
-    appContainer->setBackground(Color::LightGray);
-    UIConfig *ui = appContainer->ui();
-    appContainer->setLeftPadding(ui->du(1));
-    appContainer->setRightPadding(ui->du(1));
-
-
-    appContainer->add(listContainer);
-    appContainer->add(this->label);
-    this->rootPage->setContent(appContainer);
-
-    ActionItem *addServerAction = ActionItem::create()
-                                            .title("Add")
-                                            .image(Image("asset:///ic_add.png"))
-                                            .onTriggered(this, SLOT(addServerPage()));
-
-
-    this->rootPage->addAction(addServerAction, ActionBarPlacement::OnBar);
-
-    this->navigationPane->push(this->rootPage);
-    Application::instance()->setScene(this->navigationPane);
-
-}
-
-void ApplicationUI::initCardUI()
-{
-    QVariantMap map;
-    ServerListItemFactory *serverListItemFactory = new ServerListItemFactory();
-
-
-    Container *listContainer = new Container();
-    listContainer->setBackground(Color::Yellow);
-    listContainer->setLayout(DockLayout::create());
-    listContainer->setHorizontalAlignment(HorizontalAlignment::Fill);
-    listContainer->setMinHeight(this->displayInfo->physicalSize().height() * 0.9);
-
-    this->label = new Label();
-    this->label->setHorizontalAlignment(HorizontalAlignment::Fill);
-
-    this->list = new ListView();
-
-    listContainer->add(list);
-    this->list->setDataModel(&this->listViewDataModel);
-    this->list->setListItemProvider(serverListItemFactory);
-    this->listViewDataModel.clear();
-    this->readAccountInfo();
-
-
-    Container *appContainer = new Container();
-    appContainer->setLayout(StackLayout::create()
-                            .orientation(LayoutOrientation::TopToBottom));
-    appContainer->setHorizontalAlignment(HorizontalAlignment::Fill);
-    appContainer->setVerticalAlignment(VerticalAlignment::Fill);
-    appContainer->setBackground(Color::LightGray);
-    UIConfig *ui = appContainer->ui();
-    appContainer->setLeftPadding(ui->du(1));
-    appContainer->setRightPadding(ui->du(1));
-
-
-    appContainer->add(listContainer);
-    appContainer->add(this->label);
-    this->rootPage->setContent(appContainer);
-    this->navigationPane->push(this->rootPage);
-    Application::instance()->setScene(this->navigationPane);
-
-}
 
 int32_t ApplicationUI::readAccountInfo()
 {
@@ -217,7 +133,7 @@ int32_t ApplicationUI::readAccountInfo()
     return 0;
 }
 
-void ApplicationUI::addServerPage()
+void ApplicationUI::addServerPressed()
 {
     Page *addServerPage = Page::create().objectName("addServerPage");
 
@@ -233,119 +149,222 @@ void ApplicationUI::addServerPage()
 
 void ApplicationUI::pushFinished(bb::cascades::Page *page)
 {
+
+    /* No action on push finish signal on application launch */
+
     if(page->objectName().compare("addServerPage") == 0)
     {
-        ScrollView *scrollview = ScrollView::create();
-        Container *addServerContainer = Container::create()
-                                        .horizontal(HorizontalAlignment::Fill)
-                                        .vertical(VerticalAlignment::Fill)
-                                        .layout(StackLayout::create()
-                                                .orientation(LayoutOrientation::TopToBottom));
-        UIConfig *ui = addServerContainer->ui();
-        addServerContainer->setLeftPadding(ui->du(2));
-        addServerContainer->setRightPadding(ui->du(2));
-
-        Label *serverNameLabel = Label::create("Display Name")
-                                        .horizontal(HorizontalAlignment::Fill)
-                                        .bottomMargin(ui->du(1));
-        serverNameLabel->textStyle()->setFontSize(FontSize::Small);
-        addServerContainer->add(serverNameLabel);
-
-        TextField *serverName = TextField::create()
-                                .hintText("Work FTP")
-                                .bottomMargin(ui->du(2))
-                                .backgroundVisible(true)
-                                .clearButtonVisible(true);
-        serverName->input()->setSubmitKey(SubmitKey::Done);
-        serverName->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
-
-        addServerContainer->add(serverName);
-        addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
-
-        Label *serverCredentials = Label::create("Server Credentials")
-                                        .horizontal(HorizontalAlignment::Fill)
-                                        .bottomMargin(ui->du(1));
-        serverCredentials->textStyle()->setFontSize(FontSize::Small);
-
-        TextField *serverUrl = TextField::create()
-                                .hintText("URL")
-                                .bottomMargin(ui->du(1))
-                                .backgroundVisible(true)
-                                .clearButtonVisible(true);
-        serverUrl->input()->setSubmitKey(SubmitKey::Done);
-        serverUrl->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
-
-        TextField *userName = TextField::create()
-                                .hintText("User name")
-                                .bottomMargin(ui->du(1))
-                                .backgroundVisible(true)
-                                .clearButtonVisible(true);
-        userName->input()->setSubmitKey(SubmitKey::Done);
-        userName->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
-
-        TextField *password = TextField::create()
-                                .hintText("Password")
-                                .bottomMargin(ui->du(1))
-                                .backgroundVisible(true)
-                                .clearButtonVisible(true)
-                                .inputMode(TextFieldInputMode::Password);
-        password->input()->setSubmitKey(SubmitKey::Done);
-        password->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
-
-        addServerContainer->add(serverCredentials);
-        addServerContainer->add(serverUrl);
-        addServerContainer->add(userName);
-        addServerContainer->add(password);
-        addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
-
-        Label *protocolLabel = Label::create("Protocol")
-                                .horizontal(HorizontalAlignment::Fill)
-                                .bottomMargin(ui->du(1));
-        protocolLabel->textStyle()->setFontSize(FontSize::Small);
-
-        DropDown *protocol = DropDown::create()
-                                    .title("Protocol")
-                                    .bottomMargin(ui->du(2));
-        protocol->add(Option::create().text("FTP"));
-        protocol->add(Option::create().text("SFTP"));
-
-        addServerContainer->add(protocolLabel);
-        addServerContainer->add(protocol);
-
-        addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
-
-        Label *protocolPort = Label::create("Port")
-                                .horizontal(HorizontalAlignment::Fill)
-                                .bottomMargin(ui->du(1));
-        protocolPort->textStyle()->setFontSize(FontSize::Small);
-
-        TextField *port = TextField::create()
-                                .hintText("Port")
-                                .bottomMargin(ui->du(1))
-                                .backgroundVisible(true)
-                                .clearButtonVisible(true)
-                                .inputMode(TextFieldInputMode::NumbersAndPunctuation);
-        port->input()->setSubmitKey(SubmitKey::Done);
-        port->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Lose);
-
-        addServerContainer->add(protocolPort);
-        addServerContainer->add(port);
-
-        addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
-
-        scrollview->setContent(addServerContainer);
-        page->setContent(scrollview);
+        this->renderAddServerPage(page, false, 0);
     }
+
+    if(page->objectName().compare("serverEntryEditPage") == 0)
+    {
+        qDebug()<<this->list->selected().at(0).toInt();
+        this->renderAddServerPage(page, true, this->list->selected().at(0).toInt());
+    }
+
 }
 
 void ApplicationUI::popFinished(bb::cascades::Page *page)
 {
-    delete page;
+    if(page->objectName().compare("addServerPage") == 0)
+    {
+        qDebug()<<"Remove page "<<page->objectName();
+        page->deleteLater();
+    }
+
+    if(page->objectName().compare("serverEntryEditPage") == 0)
+    {
+        qDebug()<<"Remove page "<<page->objectName();
+        page->deleteLater();
+    }
+
     this->label->setText("Pop finished");
 }
 
+void ApplicationUI::renderServerListPage(bb::cascades::Page *page, bool card)
+{
+    ServerListItemFactory *serverListItemFactory = new ServerListItemFactory();
+
+    Container *listContainer = new Container();
+//    listContainer->setBackground(Color::Yellow);
+    listContainer->setLayout(DockLayout::create());
+    listContainer->setHorizontalAlignment(HorizontalAlignment::Fill);
+    UIConfig *ui = listContainer->ui();
+    listContainer->setLeftPadding(ui->du(1));
+    listContainer->setRightPadding(ui->du(1));
+
+    this->list = new ListView();
+    this->list->setDataModel(&this->listViewDataModel);
+    this->list->setListItemProvider(serverListItemFactory);
+    listContainer->add(list);
+
+    if(!card)
+    {
+        ActionSet *listItemActions = ActionSet::create().title("Actions");
+
+        ActionItem *editEntry = ActionItem::create()
+                                            .title("Edit")
+                                            .image(Image("asset:///ic_edit.png"))
+                                            .onTriggered(this, SLOT(onServerEntryEdit()));
+
+        DeleteActionItem *delServerEntry = DeleteActionItem::create()
+                                                .onTriggered(this, SLOT(onServerEntryDelete()));
+
+        listItemActions->add(editEntry);
+        listItemActions->add(delServerEntry);
+
+        this->list->addActionSet(listItemActions);
+
+        ActionItem *addServerAction = ActionItem::create()
+                                                .title("Add")
+                                                .image(Image("asset:///ic_add.png"))
+                                                .onTriggered(this, SLOT(addServerPressed()));
+
+        page->addAction(addServerAction, ActionBarPlacement::OnBar);
+    }
+    page->setContent(listContainer);
+    this->navigationPane->push(page);
+}
+
+void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, int index)
+{
+    ScrollView *scrollview = ScrollView::create();
+    Container *addServerContainer = Container::create()
+                                   .horizontal(HorizontalAlignment::Fill)
+                                   .vertical(VerticalAlignment::Fill)
+                                   .layout(StackLayout::create()
+                                           .orientation(LayoutOrientation::TopToBottom));
+    UIConfig *ui = addServerContainer->ui();
+    addServerContainer->setLeftPadding(ui->du(2));
+    addServerContainer->setRightPadding(ui->du(2));
+
+    Label *serverNameLabel = Label::create("Display Name")
+                                   .horizontal(HorizontalAlignment::Fill)
+                                   .bottomMargin(ui->du(1));
+    serverNameLabel->textStyle()->setFontSize(FontSize::Small);
+    addServerContainer->add(serverNameLabel);
+
+    TextField *serverName = TextField::create()
+                           .hintText("Work FTP")
+                           .bottomMargin(ui->du(2))
+                           .backgroundVisible(true)
+                           .clearButtonVisible(true);
+    serverName->input()->setSubmitKey(SubmitKey::Done);
+    serverName->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
+
+    addServerContainer->add(serverName);
+    addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
+
+    Label *serverCredentials = Label::create("Server Credentials")
+                                   .horizontal(HorizontalAlignment::Fill)
+                                   .bottomMargin(ui->du(1));
+    serverCredentials->textStyle()->setFontSize(FontSize::Small);
+
+    TextField *serverUrl = TextField::create()
+                           .hintText("URL")
+                           .bottomMargin(ui->du(1))
+                           .backgroundVisible(true)
+                           .clearButtonVisible(true);
+    serverUrl->input()->setSubmitKey(SubmitKey::Done);
+    serverUrl->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
+
+    TextField *userName = TextField::create()
+                           .hintText("User name")
+                           .bottomMargin(ui->du(1))
+                           .backgroundVisible(true)
+                           .clearButtonVisible(true);
+    userName->input()->setSubmitKey(SubmitKey::Done);
+    userName->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
+
+    TextField *password = TextField::create()
+                           .hintText("Password")
+                           .bottomMargin(ui->du(1))
+                           .backgroundVisible(true)
+                           .clearButtonVisible(true)
+                           .inputMode(TextFieldInputMode::Password);
+    password->input()->setSubmitKey(SubmitKey::Done);
+    password->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
+
+    addServerContainer->add(serverCredentials);
+    addServerContainer->add(serverUrl);
+    addServerContainer->add(userName);
+    addServerContainer->add(password);
+    addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
+
+    Label *protocolLabel = Label::create("Protocol")
+                           .horizontal(HorizontalAlignment::Fill)
+                           .bottomMargin(ui->du(1));
+    protocolLabel->textStyle()->setFontSize(FontSize::Small);
+
+    DropDown *protocol = DropDown::create()
+                               .title("Protocol")
+                               .bottomMargin(ui->du(2));
+    protocol->add(Option::create().text("FTP"));
+    protocol->add(Option::create().text("SFTP"));
+    protocol->setSelectedIndex(0);
+
+    addServerContainer->add(protocolLabel);
+    addServerContainer->add(protocol);
+
+    addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
+
+    Label *protocolPort = Label::create("Port")
+                           .horizontal(HorizontalAlignment::Fill)
+                           .bottomMargin(ui->du(1));
+    protocolPort->textStyle()->setFontSize(FontSize::Small);
+
+    TextField *port = TextField::create()
+                           .hintText("Port")
+                           .bottomMargin(ui->du(1))
+                           .backgroundVisible(true)
+                           .clearButtonVisible(true)
+                           .inputMode(TextFieldInputMode::NumbersAndPunctuation);
+    port->input()->setSubmitKey(SubmitKey::Done);
+    port->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Lose);
+
+    addServerContainer->add(protocolPort);
+    addServerContainer->add(port);
+
+    addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
+
+    scrollview->setContent(addServerContainer);
+    page->setContent(scrollview);
+
+    if(prefill)
+    {
+        QVariantMap map = this->listViewDataModel.value(index).toMap();
+        serverName->setText(map["name"].toString());
+        serverUrl->setText(map["url"].toString());
+        userName->setText(map["uname"].toString());
+
+        if(map["protocol"].toString().compare("FTP") == 0)
+        {
+            protocol->setSelectedIndex(FTP_PROTOCOL);
+        }
+        else
+        {
+            protocol->setSelectedIndex(SFTP_PROTOCOL);
+        }
+        port->setText(map["port"].toString());
+    }
+}
+
+void ApplicationUI::onServerEntryEdit()
+{
+    Page *serverEntryEditPage = Page::create()
+        .objectName("serverEntryEditPage");
+
+    this->navigationPane->push(serverEntryEditPage);
+}
+
+void ApplicationUI::onServerEntryDelete()
+{
+
+}
 void ApplicationUI::onInvoke(const bb::system::InvokeRequest& data)
 {
     Q_UNUSED(data);
-    this->initCardUI();
+    this->rootPage->setObjectName("appLaunchPage");
+    this->navigationPane->push(this->rootPage);
 }
