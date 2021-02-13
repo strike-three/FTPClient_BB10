@@ -26,6 +26,7 @@
 #include <bb/cascades/ActionItem>
 #include <bb/cascades/TextField>
 #include <bb/cascades/DropDown>
+#include <bb/cascades/ScrollView>
 
 #include <bb/cascades/NavigationPaneProperties>
 #include <bb/data/JsonDataAccess>
@@ -233,95 +234,96 @@ void ApplicationUI::pushFinished(bb::cascades::Page *page)
 {
     if(page->objectName().compare("addServerPage") == 0)
     {
-    Container *addServerContainer = Container::create()
-                                    .horizontal(HorizontalAlignment::Fill)
-                                    .vertical(VerticalAlignment::Fill)
-                                    .layout(StackLayout::create()
-                                            .orientation(LayoutOrientation::TopToBottom));
-    UIConfig *ui = addServerContainer->ui();
-    addServerContainer->setLeftPadding(ui->du(2));
-    addServerContainer->setRightPadding(ui->du(2));
+        ScrollView *scrollview = ScrollView::create();
+        Container *addServerContainer = Container::create()
+                                        .horizontal(HorizontalAlignment::Fill)
+                                        .vertical(VerticalAlignment::Fill)
+                                        .layout(StackLayout::create()
+                                                .orientation(LayoutOrientation::TopToBottom));
+        UIConfig *ui = addServerContainer->ui();
+        addServerContainer->setLeftPadding(ui->du(2));
+        addServerContainer->setRightPadding(ui->du(2));
 
-    Label *serverNameLabel = Label::create("Display Name")
-                                    .horizontal(HorizontalAlignment::Fill)
-                                    .bottomMargin(ui->du(1));
-    serverNameLabel->textStyle()->setFontSize(FontSize::Small);
-    addServerContainer->add(serverNameLabel);
+        Label *serverNameLabel = Label::create("Display Name")
+                                        .horizontal(HorizontalAlignment::Fill)
+                                        .bottomMargin(ui->du(1));
+        serverNameLabel->textStyle()->setFontSize(FontSize::Small);
+        addServerContainer->add(serverNameLabel);
 
-    TextField *serverName = TextField::create()
-                            .hintText("Work FTP")
-                            .bottomMargin(ui->du(2))
-                            .backgroundVisible(true)
-                            .clearButtonVisible(true);
+        TextField *serverName = TextField::create()
+                                .hintText("Work FTP")
+                                .bottomMargin(ui->du(2))
+                                .backgroundVisible(true)
+                                .clearButtonVisible(true);
 
-    addServerContainer->add(serverName);
+        addServerContainer->add(serverName);
 
-    Label *serverCredentials = Label::create("Server Credentials")
-                                    .horizontal(HorizontalAlignment::Fill)
-                                    .bottomMargin(ui->du(1));
-    serverCredentials->textStyle()->setFontSize(FontSize::Small);
+        Label *serverCredentials = Label::create("Server Credentials")
+                                        .horizontal(HorizontalAlignment::Fill)
+                                        .bottomMargin(ui->du(1));
+        serverCredentials->textStyle()->setFontSize(FontSize::Small);
 
-    TextField *serverUrl = TextField::create()
-                            .hintText("URL")
-                            .bottomMargin(ui->du(1))
-                            .backgroundVisible(true)
-                            .clearButtonVisible(true);
+        TextField *serverUrl = TextField::create()
+                                .hintText("URL")
+                                .bottomMargin(ui->du(1))
+                                .backgroundVisible(true)
+                                .clearButtonVisible(true);
 
-    TextField *userName = TextField::create()
-                            .hintText("User name")
-                            .bottomMargin(ui->du(1))
-                            .backgroundVisible(true)
-                            .clearButtonVisible(true);
+        TextField *userName = TextField::create()
+                                .hintText("User name")
+                                .bottomMargin(ui->du(1))
+                                .backgroundVisible(true)
+                                .clearButtonVisible(true);
 
-    TextField *password = TextField::create()
-                            .hintText("Password")
-                            .bottomMargin(ui->du(1))
-                            .backgroundVisible(true)
-                            .clearButtonVisible(true)
-                            .inputMode(TextFieldInputMode::Password);
+        TextField *password = TextField::create()
+                                .hintText("Password")
+                                .bottomMargin(ui->du(1))
+                                .backgroundVisible(true)
+                                .clearButtonVisible(true)
+                                .inputMode(TextFieldInputMode::Password);
 
 
-    addServerContainer->add(serverCredentials);
-    addServerContainer->add(serverUrl);
-    addServerContainer->add(userName);
-    addServerContainer->add(password);
+        addServerContainer->add(serverCredentials);
+        addServerContainer->add(serverUrl);
+        addServerContainer->add(userName);
+        addServerContainer->add(password);
 
-//    Container protocolContainer = Container::create()
-//                                    .horizontal(HorizontalAlignment::Fill)
-//                                    .layout(StackLayout::create()
-//                                            .orientation(LayoutOrientation::LeftToRight))
-//                                    .top(ui->du(1));
-    Label *protocolLabel = Label::create("Protocol")
-                            .horizontal(HorizontalAlignment::Fill)
-                            .bottomMargin(ui->du(1));
-    protocolLabel->textStyle()->setFontSize(FontSize::Small);
+    //    Container protocolContainer = Container::create()
+    //                                    .horizontal(HorizontalAlignment::Fill)
+    //                                    .layout(StackLayout::create()
+    //                                            .orientation(LayoutOrientation::LeftToRight))
+    //                                    .top(ui->du(1));
+        Label *protocolLabel = Label::create("Protocol")
+                                .horizontal(HorizontalAlignment::Fill)
+                                .bottomMargin(ui->du(1));
+        protocolLabel->textStyle()->setFontSize(FontSize::Small);
 
-    addServerContainer->add(protocolLabel);
+        addServerContainer->add(protocolLabel);
 
-    DropDown *protocol = DropDown::create()
-                                .title("Protocol")
-                                .bottomMargin(ui->du(2));
-    protocol->add(Option::create().text("FTP"));
-    protocol->add(Option::create().text("SFTP"));
+        DropDown *protocol = DropDown::create()
+                                    .title("Protocol")
+                                    .bottomMargin(ui->du(2));
+        protocol->add(Option::create().text("FTP"));
+        protocol->add(Option::create().text("SFTP"));
 
-    addServerContainer->add(protocol);
+        addServerContainer->add(protocol);
 
-    Label *protocolPort = Label::create("Port")
-                            .horizontal(HorizontalAlignment::Fill)
-                            .bottomMargin(ui->du(1));
-    protocolPort->textStyle()->setFontSize(FontSize::Small);
+        Label *protocolPort = Label::create("Port")
+                                .horizontal(HorizontalAlignment::Fill)
+                                .bottomMargin(ui->du(1));
+        protocolPort->textStyle()->setFontSize(FontSize::Small);
 
-    TextField *port = TextField::create()
-                            .hintText("Port")
-                            .bottomMargin(ui->du(1))
-                            .backgroundVisible(true)
-                            .clearButtonVisible(true)
-                            .inputMode(TextFieldInputMode::NumbersAndPunctuation);
+        TextField *port = TextField::create()
+                                .hintText("Port")
+                                .bottomMargin(ui->du(1))
+                                .backgroundVisible(true)
+                                .clearButtonVisible(true)
+                                .inputMode(TextFieldInputMode::NumbersAndPunctuation);
 
-    addServerContainer->add(protocolPort);
-    addServerContainer->add(port);
-
-    page->setContent(addServerContainer);
+        addServerContainer->add(protocolPort);
+        addServerContainer->add(port);
+        scrollview->setContent(addServerContainer);
+        page->setContent(scrollview);
     }
 }
 
