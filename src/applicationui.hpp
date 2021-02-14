@@ -58,6 +58,9 @@ private slots:
     void popFinished(bb::cascades::Page*);
     void onServerEntryEdit();
     void onServerEntryDelete();
+    void onServerSave();
+    void onServerConnTest();
+
 private:
 void renderServerListPage(bb::cascades::Page*, bool);
 void renderAddServerPage(bb::cascades::Page*, bool, int);

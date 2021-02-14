@@ -30,6 +30,8 @@
 #include <bb/cascades/Divider>
 #include <bb/cascades/DeleteActionItem>
 #include <bb/cascades/ActionSet>
+#include <bb/cascades/Button>
+#include <bb/cascades/StackLayoutProperties>
 
 #include <bb/cascades/NavigationPaneProperties>
 #include <bb/data/JsonDataAccess>
@@ -229,8 +231,9 @@ void ApplicationUI::renderServerListPage(bb::cascades::Page *page, bool card)
 
 void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, int index)
 {
-    ScrollView *scrollview = ScrollView::create();
+    ScrollView *scrollview = ScrollView::create().objectName("Scroll View");
     Container *addServerContainer = Container::create()
+                                   .objectName("addServerContainer")
                                    .horizontal(HorizontalAlignment::Fill)
                                    .vertical(VerticalAlignment::Fill)
                                    .layout(StackLayout::create()
@@ -240,12 +243,14 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     addServerContainer->setRightPadding(ui->du(2));
 
     Label *serverNameLabel = Label::create("Display Name")
+                                   .objectName("serverNameLabel")
                                    .horizontal(HorizontalAlignment::Fill)
                                    .bottomMargin(ui->du(1));
     serverNameLabel->textStyle()->setFontSize(FontSize::Small);
     addServerContainer->add(serverNameLabel);
 
     TextField *serverName = TextField::create()
+                           .objectName("serverName")
                            .hintText("Work FTP")
                            .bottomMargin(ui->du(2))
                            .backgroundVisible(true)
@@ -257,11 +262,13 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
 
     Label *serverCredentials = Label::create("Server Credentials")
+                                   .objectName("serverCredentials")
                                    .horizontal(HorizontalAlignment::Fill)
                                    .bottomMargin(ui->du(1));
     serverCredentials->textStyle()->setFontSize(FontSize::Small);
 
     TextField *serverUrl = TextField::create()
+                           .objectName("serverUrl")
                            .hintText("URL")
                            .bottomMargin(ui->du(1))
                            .backgroundVisible(true)
@@ -270,6 +277,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     serverUrl->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
     TextField *userName = TextField::create()
+                           .objectName("userName")
                            .hintText("User name")
                            .bottomMargin(ui->du(1))
                            .backgroundVisible(true)
@@ -278,6 +286,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     userName->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
     TextField *password = TextField::create()
+                           .objectName("password")
                            .hintText("Password")
                            .bottomMargin(ui->du(1))
                            .backgroundVisible(true)
@@ -293,11 +302,13 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
 
     Label *protocolLabel = Label::create("Protocol")
+                           .objectName("protocolLabel")
                            .horizontal(HorizontalAlignment::Fill)
                            .bottomMargin(ui->du(1));
     protocolLabel->textStyle()->setFontSize(FontSize::Small);
 
     DropDown *protocol = DropDown::create()
+                               .objectName("protocol")
                                .title("Protocol")
                                .bottomMargin(ui->du(2));
     protocol->add(Option::create().text("FTP"));
@@ -310,11 +321,13 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
 
     Label *protocolPort = Label::create("Port")
+                           .objectName("protocolPort")
                            .horizontal(HorizontalAlignment::Fill)
                            .bottomMargin(ui->du(1));
     protocolPort->textStyle()->setFontSize(FontSize::Small);
 
     TextField *port = TextField::create()
+                           .objectName("port")
                            .hintText("Port")
                            .bottomMargin(ui->du(1))
                            .backgroundVisible(true)
@@ -327,6 +340,34 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     addServerContainer->add(port);
 
     addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
+
+    Container *buttonContainer = Container::create()
+                                    .objectName("buttonContainer")
+                                    .layout(StackLayout::create()
+                                            .orientation(LayoutOrientation::LeftToRight))
+                                    .horizontal(HorizontalAlignment::Fill);
+
+    Button *saveButton = Button::create("Save")
+                            .objectName("saveButton")
+                            .rightMargin(ui->du(2))
+                            .layoutProperties(StackLayoutProperties::create().spaceQuota(1));
+    bool res = QObject::connect(saveButton, SIGNAL(clicked()),
+                                this, SLOT(onServerSave()));
+    Q_ASSERT(res);
+
+    Button *testButton = Button::create("Test Connection")
+                            .objectName("testButton")
+                            .rightMargin(ui->du(2))
+                            .layoutProperties(StackLayoutProperties::create().spaceQuota(1));
+
+    res = QObject::connect(testButton, SIGNAL(clicked()),
+                                this, SLOT(onServerConnTest()));
+    Q_ASSERT(res);
+
+    buttonContainer->add(saveButton);
+    buttonContainer->add(testButton);
+
+    addServerContainer->add(buttonContainer);
 
     scrollview->setContent(addServerContainer);
     page->setContent(scrollview);
@@ -361,6 +402,16 @@ void ApplicationUI::onServerEntryEdit()
 void ApplicationUI::onServerEntryDelete()
 {
 
+}
+
+void ApplicationUI::onServerSave()
+{
+    qDebug()<<"Save requested "<< this->navigationPane->at(1)->content()->objectName();
+}
+
+void ApplicationUI::onServerConnTest()
+{
+    qDebug()<<"Test conn requested";
 }
 void ApplicationUI::onInvoke(const bb::system::InvokeRequest& data)
 {
