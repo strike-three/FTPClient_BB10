@@ -65,6 +65,7 @@ private:
 void renderServerListPage(bb::cascades::Page*, bool);
 void renderAddServerPage(bb::cascades::Page*, bool, int);
 int32_t readAccountInfo();
+void saveAccountInfo();
 QVariantListDataModel listViewDataModel;
 NavigationPane* navigationPane;
 Page *rootPage;

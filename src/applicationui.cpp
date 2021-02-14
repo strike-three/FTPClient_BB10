@@ -135,6 +135,22 @@ int32_t ApplicationUI::readAccountInfo()
     return 0;
 }
 
+void ApplicationUI::saveAccountInfo()
+{
+    QString filePath = QDir::currentPath() + "/app/native/assets/json/accounts.json";
+    QFile accountFile(filePath);
+    bb::data::JsonDataAccess data;
+    QVariantList accountData;
+
+    accountFile.resize(0);
+
+    for(int i = 0; i < this->listViewDataModel.size(); i++)
+    {
+        accountData.append(this->listViewDataModel.value(i));
+    }
+    data.save(accountData, filePath);
+}
+
 void ApplicationUI::addServerPressed()
 {
     Page *addServerPage = Page::create().objectName("addServerPage");
@@ -367,7 +383,20 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     buttonContainer->add(saveButton);
     buttonContainer->add(testButton);
 
+    TextField *operation = TextField::create()
+                            .objectName("operation")
+                            .visible(false)
+                            .text("appendEntry");
+
+    TextField *entryindex = TextField::create()
+                        .objectName("entryIndex")
+                        .visible(false);
+
+    entryindex->setText(QString::number(this->listViewDataModel.size()));
+
     addServerContainer->add(buttonContainer);
+    addServerContainer->add(operation);
+    addServerContainer->add(entryindex);
 
     scrollview->setContent(addServerContainer);
     page->setContent(scrollview);
@@ -378,7 +407,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
         serverName->setText(map["name"].toString());
         serverUrl->setText(map["url"].toString());
         userName->setText(map["uname"].toString());
-
+        password->setText(map["password"].toString());
         if(map["protocol"].toString().compare("FTP") == 0)
         {
             protocol->setSelectedIndex(FTP_PROTOCOL);
@@ -388,6 +417,9 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
             protocol->setSelectedIndex(SFTP_PROTOCOL);
         }
         port->setText(map["port"].toString());
+
+        operation->setText("editEntry");
+        entryindex->setText(QString::number(index));
     }
 }
 
@@ -406,7 +438,30 @@ void ApplicationUI::onServerEntryDelete()
 
 void ApplicationUI::onServerSave()
 {
-    qDebug()<<"Save requested "<< this->navigationPane->at(1)->content()->objectName();
+    QVariantMap map;
+    map["name"] = this->navigationPane->at(1)->findChild<TextField *>("serverName")->text();
+    map["url"] = this->navigationPane->at(1)->findChild<TextField *>("serverUrl")->text();
+    map["uname"] = this->navigationPane->at(1)->findChild<TextField *>("userName")->text();
+    map["password"] = this->navigationPane->at(1)->findChild<TextField *>("password")->text();
+    map["protocol"] = this->navigationPane->at(1)->findChild<DropDown *>("protocol")->selectedOption()->text();
+    map["port"] = this->navigationPane->at(1)->findChild<TextField *>("port")->text().toUInt();
+    map["connstatus"] = true;
+
+    if(this->navigationPane->at(1)->findChild<TextField *>("operation")->text()
+            .compare("editEntry") == 0)
+    {
+        qDebug()<<"removing entry at "<<this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt();
+        this->listViewDataModel.removeAt(
+        this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt());
+
+        qDebug()<<this->listViewDataModel.size();
+    }
+
+    qDebug()<<"inserting entry at "<<this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt();
+    this->listViewDataModel.insert(this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt(),
+                                    (QVariant)map);
+
+    saveAccountInfo();
 }
 
 void ApplicationUI::onServerConnTest()
