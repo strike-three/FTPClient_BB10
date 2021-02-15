@@ -155,12 +155,6 @@ void ApplicationUI::addServerPressed()
 {
     Page *addServerPage = Page::create().objectName("addServerPage");
 
-    ActionItem *backAction = ActionItem::create()
-                                .title("Back")
-                                .imageSource(QUrl("asset:///ic_previous.amd"))
-                                .onTriggered(this->navigationPane, SLOT(pop()));
-    addServerPage->setPaneProperties(NavigationPaneProperties::create()
-                                        .backButton(backAction));
 
     this->navigationPane->push(addServerPage);
 }
@@ -179,6 +173,7 @@ void ApplicationUI::pushFinished(bb::cascades::Page *page)
     {
         qDebug()<<this->list->selected().at(0).toInt();
         this->renderAddServerPage(page, true, this->list->selected().at(0).toInt());
+        this->list->clearSelection();
     }
 
 }
@@ -215,6 +210,7 @@ void ApplicationUI::renderServerListPage(bb::cascades::Page *page, bool card)
     this->list = new ListView();
     this->list->setDataModel(&this->listViewDataModel);
     this->list->setListItemProvider(serverListItemFactory);
+    this->list->setObjectName("serverList");
     listContainer->add(list);
 
     if(!card)
@@ -433,7 +429,8 @@ void ApplicationUI::onServerEntryEdit()
 
 void ApplicationUI::onServerEntryDelete()
 {
-
+    qDebug()<<"Delete entry "<<this->navigationPane->at(0)->findChild<ListView *>("serverList")->selected();
+    this->list->clearSelection();
 }
 
 void ApplicationUI::onServerSave()
@@ -461,13 +458,32 @@ void ApplicationUI::onServerSave()
     this->listViewDataModel.insert(this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt(),
                                     (QVariant)map);
 
-    saveAccountInfo();
+    this->saveAccountInfo();
+    this->listViewDataModel.clear();
+    this->readAccountInfo();
+
+    this->navigationPane->at(1)->findChild<Button *>("saveButton")->setEnabled(false);
 }
 
 void ApplicationUI::onServerConnTest()
 {
-    qDebug()<<"Test conn requested";
+    this->ftpInterface = new Ftp_interface();
+
+    bool res = QObject::connect(ftpInterface, SIGNAL(verificationDone(QVariant)),
+            this, SLOT(onVerificationDone(QVariant)));
+
+    Q_ASSERT(res);
+
+    ftpInterface->verifyServerConnection(this->listViewDataModel.value(0));
 }
+
+void ApplicationUI::onVerificationDone(QVariant verificationResult)
+{
+    QVariantMap map = verificationResult.toMap();
+    qDebug()<<"Verified" << map["result"] << " "<<map["reason"];
+    delete this->ftpInterface;
+}
+
 void ApplicationUI::onInvoke(const bb::system::InvokeRequest& data)
 {
     Q_UNUSED(data);

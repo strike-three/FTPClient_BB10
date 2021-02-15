@@ -33,6 +33,8 @@
 
 #include <bb/device/DisplayInfo>
 
+#include "Ftpinterface.h"
+
 using namespace bb::cascades;
 
 #define FTP_PROTOCOL    0
@@ -60,6 +62,7 @@ private slots:
     void onServerEntryDelete();
     void onServerSave();
     void onServerConnTest();
+    void onVerificationDone(QVariant);
 
 private:
 void renderServerListPage(bb::cascades::Page*, bool);
@@ -71,6 +74,7 @@ NavigationPane* navigationPane;
 Page *rootPage;
 ListView *list;
 Label *label;
+Ftp_interface *ftpInterface;
 bb::system::InvokeManager *invokemanager;
 bb::device::DisplayInfo *displayInfo;
 };
