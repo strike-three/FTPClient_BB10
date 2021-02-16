@@ -21,6 +21,8 @@
 
 #include <QObject>
 
+#include <QtNetwork/QFtp>
+
 #include <bb/cascades/Page>
 #include <bb/cascades/NavigationPane>
 
@@ -39,6 +41,20 @@ using namespace bb::cascades;
 
 #define FTP_PROTOCOL    0
 #define SFTP_PROTOCOL   1
+
+#define ACTION_CONNECT              (0x00000001U)
+#define ACTION_LOGIN                (0x00000002U)
+#define ACTION_DISCONNECT           (0x00000004U)
+
+
+struct command_meta_data_t{
+    int sequence;
+    QString url;
+    QString uname;
+    QString password;
+    int port;
+    QString path;
+};
 
 /*!
  * @brief Application UI object
@@ -62,19 +78,31 @@ private slots:
     void onServerEntryDelete();
     void onServerSave();
     void onServerConnTest();
-    void onVerificationDone(QVariant);
+    void onFtpStateChanged(int);
+    void onFtpCommandStarted(int);
+    void onFtpCommandFinished(int, bool);
+    void serverConnTestFinished();
+
+signals:
+    void verificationFinished();
 
 private:
 void renderServerListPage(bb::cascades::Page*, bool);
 void renderAddServerPage(bb::cascades::Page*, bool, int);
 int32_t readAccountInfo();
 void saveAccountInfo();
+void createFtpInstance();
+void queueFtpCommands(int);
+void startCommand();
+struct command_meta_data_t command_meta_data;
+
 QVariantListDataModel listViewDataModel;
 NavigationPane* navigationPane;
 Page *rootPage;
 ListView *list;
 Label *label;
 Ftp_interface *ftpInterface;
+QFtp *ftp;
 bb::system::InvokeManager *invokemanager;
 bb::device::DisplayInfo *displayInfo;
 };

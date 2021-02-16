@@ -189,6 +189,7 @@ void ApplicationUI::popFinished(bb::cascades::Page *page)
     if(page->objectName().compare("serverEntryEditPage") == 0)
     {
         qDebug()<<"Remove page "<<page->objectName();
+        delete this->ftp;
         page->deleteLater();
     }
 
@@ -430,7 +431,12 @@ void ApplicationUI::onServerEntryEdit()
 void ApplicationUI::onServerEntryDelete()
 {
     qDebug()<<"Delete entry "<<this->navigationPane->at(0)->findChild<ListView *>("serverList")->selected();
+
+    this->listViewDataModel.removeAt(
+            this->list->selected().at(0).toInt());
     this->list->clearSelection();
+
+    this->saveAccountInfo();
 }
 
 void ApplicationUI::onServerSave()
@@ -467,21 +473,88 @@ void ApplicationUI::onServerSave()
 
 void ApplicationUI::onServerConnTest()
 {
-    this->ftpInterface = new Ftp_interface();
+    this->createFtpInstance();
 
-    bool res = QObject::connect(ftpInterface, SIGNAL(verificationDone(QVariant)),
-            this, SLOT(onVerificationDone(QVariant)));
+    /* Enter command meta data */
+    this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_DISCONNECT;
+    this->command_meta_data.url = this->navigationPane->top()->findChild<TextField *>("serverUrl")->text();
+    this->command_meta_data.uname = this->navigationPane->top()->findChild<TextField *>("userName")->text();
+    this->command_meta_data.password = this->navigationPane->top()->findChild<TextField *>("password")->text();
+    this->command_meta_data.port = this->navigationPane->top()->findChild<TextField *>("port")->text().toInt();
 
+    bool res = QObject::connect(this, SIGNAL(verificationFinished()), this, SLOT(serverConnTestFinished()));
     Q_ASSERT(res);
 
-    ftpInterface->verifyServerConnection(this->listViewDataModel.value(0));
+    this->startCommand();
 }
 
-void ApplicationUI::onVerificationDone(QVariant verificationResult)
+void ApplicationUI::serverConnTestFinished()
 {
-    QVariantMap map = verificationResult.toMap();
-    qDebug()<<"Verified" << map["result"] << " "<<map["reason"];
-    delete this->ftpInterface;
+    qDebug()<<"Verification done";
+}
+void ApplicationUI::createFtpInstance()
+{
+    this->ftp = new QFtp();
+
+    bool res = QObject::connect(ftp, SIGNAL(stateChanged(int)),
+                                this, SLOT(onFtpStateChanged(int)));
+    Q_ASSERT(res);
+
+    res = QObject::connect(ftp, SIGNAL(commandStarted(int)),
+                                this, SLOT(onFtpCommandStarted(int)));
+    Q_ASSERT(res);
+
+    res = QObject::connect(ftp, SIGNAL(commandFinished(int, bool)),
+                                this, SLOT(onFtpCommandFinished(int, bool)));
+    Q_ASSERT(res);
+}
+
+void ApplicationUI::startCommand()
+{
+    if(this->command_meta_data.sequence & ACTION_CONNECT)
+    {
+        this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_CONNECT);
+        this->ftp->connectToHost(this->command_meta_data.url, this->command_meta_data.port);
+    }
+    else if(this->command_meta_data.sequence & ACTION_LOGIN)
+    {
+        this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_LOGIN);
+        this->ftp->login(this->command_meta_data.uname, this->command_meta_data.password);
+    }
+    else if(this->command_meta_data.sequence & ACTION_DISCONNECT)
+    {
+        this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_DISCONNECT);
+        this->ftp->close();
+    }
+
+}
+
+
+void ApplicationUI::onFtpStateChanged(int state)
+{
+    if(this->navigationPane->top()->objectName().compare("serverEntryEditPage") == 0)
+    {
+        qDebug()<<"State "<<state;
+    }
+}
+
+void ApplicationUI::onFtpCommandStarted(int cmdId)
+{
+    qDebug()<<" Command started "<<cmdId;
+}
+
+void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
+{
+    qDebug()<<"Command finished "<<cmdId<<" error "<< error;
+
+    if(this->command_meta_data.sequence)
+    {
+        this->startCommand();
+    }
+    else
+    {
+        emit this->verificationFinished();
+    }
 }
 
 void ApplicationUI::onInvoke(const bb::system::InvokeRequest& data)
