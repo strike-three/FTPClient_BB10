@@ -98,10 +98,19 @@ ApplicationUI::ApplicationUI() :
     }
 }
 
+void ApplicationUI::onInvoke(const bb::system::InvokeRequest& data)
+{
+    Q_UNUSED(data);
+    this->rootPage->setObjectName("appLaunchPage");
+    this->navigationPane->push(this->rootPage);
+}
 
+/*****************************************************************************
+ *                  Read / Save Account info
+ * ***************************************************************************/
 int32_t ApplicationUI::readAccountInfo()
 {
-    QString filePath = QDir::currentPath() + "/app/native/assets/json/accounts.json";
+    QString filePath = QDir::currentPath() + ACCOUNT_INFO_FILE_PATH;
     QFile accountFile(filePath);
     bb::data::JsonDataAccess data;
     int32_t retval = 0;
@@ -137,7 +146,7 @@ int32_t ApplicationUI::readAccountInfo()
 
 void ApplicationUI::saveAccountInfo()
 {
-    QString filePath = QDir::currentPath() + "/app/native/assets/json/accounts.json";
+    QString filePath = QDir::currentPath() + ACCOUNT_INFO_FILE_PATH;
     QFile accountFile(filePath);
     bb::data::JsonDataAccess data;
     QVariantList accountData;
@@ -151,13 +160,9 @@ void ApplicationUI::saveAccountInfo()
     data.save(accountData, filePath);
 }
 
-void ApplicationUI::addServerPressed()
-{
-    Page *addServerPage = Page::create().objectName("addServerPage");
-
-
-    this->navigationPane->push(addServerPage);
-}
+/*****************************************************************************
+ *                  Push / Pop signals from Navigation pane
+ * ***************************************************************************/
 
 void ApplicationUI::pushFinished(bb::cascades::Page *page)
 {
@@ -196,6 +201,10 @@ void ApplicationUI::popFinished(bb::cascades::Page *page)
     this->label->setText("Pop finished");
 }
 
+/*****************************************************************************
+ *                  Rendering pages
+ * ***************************************************************************/
+
 void ApplicationUI::renderServerListPage(bb::cascades::Page *page, bool card)
 {
     ServerListItemFactory *serverListItemFactory = new ServerListItemFactory();
@@ -213,6 +222,11 @@ void ApplicationUI::renderServerListPage(bb::cascades::Page *page, bool card)
     this->list->setListItemProvider(serverListItemFactory);
     this->list->setObjectName("serverList");
     listContainer->add(list);
+
+    bool res = QObject::connect(this->list, SIGNAL(triggered(QVariantList)),
+                                        this, SLOT(onServerTriggered(QVariantList)));
+
+    Q_ASSERT(res);
 
     if(!card)
     {
@@ -241,6 +255,7 @@ void ApplicationUI::renderServerListPage(bb::cascades::Page *page, bool card)
     page->setContent(listContainer);
     this->navigationPane->push(page);
 }
+
 
 void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, int index)
 {
@@ -420,6 +435,20 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     }
 }
 
+
+/*****************************************************************************
+ *                  Signals / slots
+ * ***************************************************************************/
+
+void ApplicationUI::addServerPressed()
+{
+    Page *addServerPage = Page::create().objectName("addServerPage");
+
+
+    this->navigationPane->push(addServerPage);
+}
+
+
 void ApplicationUI::onServerEntryEdit()
 {
     Page *serverEntryEditPage = Page::create()
@@ -471,10 +500,12 @@ void ApplicationUI::onServerSave()
     this->navigationPane->at(1)->findChild<Button *>("saveButton")->setEnabled(false);
 }
 
+
 void ApplicationUI::onServerConnTest()
 {
     this->createFtpInstance();
-
+    this->initCommandMetaData();
+    this->command_meta_data.sequenceId = SEQUENCE_VERIFY;
     /* Enter command meta data */
     this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_DISCONNECT;
     this->command_meta_data.url = this->navigationPane->top()->findChild<TextField *>("serverUrl")->text();
@@ -490,8 +521,37 @@ void ApplicationUI::onServerConnTest()
 
 void ApplicationUI::serverConnTestFinished()
 {
-    qDebug()<<"Verification done";
+    if(this->command_meta_data.error)
+    {
+        qDebug()<<"Verification failed :" << this->command_meta_data.errorString;
+    }
+    else
+    {
+        qDebug()<<"Verification success";
+    }
+
 }
+
+/*****************************************************************************
+ *                  FTP methods
+ * ***************************************************************************/
+
+void ApplicationUI::initCommandMetaData()
+{
+    this->command_meta_data.sequenceId = 0;
+    this->command_meta_data.sequence = 0;
+    this->command_meta_data.url.clear();
+    this->command_meta_data.uname.clear();
+    this->command_meta_data.password.clear();
+    this->command_meta_data.port = 0;
+    this->command_meta_data.path.clear();
+    this->command_meta_data.error = false;
+    this->command_meta_data.errorString.clear();
+}
+
+
+
+
 void ApplicationUI::createFtpInstance()
 {
     this->ftp = new QFtp();
@@ -511,20 +571,21 @@ void ApplicationUI::createFtpInstance()
 
 void ApplicationUI::startCommand()
 {
+
     if(this->command_meta_data.sequence & ACTION_CONNECT)
     {
         this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_CONNECT);
-        this->ftp->connectToHost(this->command_meta_data.url, this->command_meta_data.port);
+        qDebug()<<"Command " <<this->ftp->connectToHost(this->command_meta_data.url, this->command_meta_data.port);
     }
     else if(this->command_meta_data.sequence & ACTION_LOGIN)
     {
         this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_LOGIN);
-        this->ftp->login(this->command_meta_data.uname, this->command_meta_data.password);
+        qDebug()<<"Command " <<this->ftp->login(this->command_meta_data.uname, this->command_meta_data.password);
     }
     else if(this->command_meta_data.sequence & ACTION_DISCONNECT)
     {
         this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_DISCONNECT);
-        this->ftp->close();
+        qDebug()<<"Command " <<this->ftp->close();
     }
 
 }
@@ -547,19 +608,25 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
 {
     qDebug()<<"Command finished "<<cmdId<<" error "<< error;
 
+    if(error)
+    {
+        this->command_meta_data.sequence = 0;
+
+        this->command_meta_data.error = error;
+        this->command_meta_data.errorString = this->ftp->errorString();
+    }
+
     if(this->command_meta_data.sequence)
     {
+
         this->startCommand();
     }
     else
     {
-        emit this->verificationFinished();
+        if(this->command_meta_data.sequenceId == SEQUENCE_VERIFY)
+        {
+            emit this->verificationFinished();
+        }
     }
 }
 
-void ApplicationUI::onInvoke(const bb::system::InvokeRequest& data)
-{
-    Q_UNUSED(data);
-    this->rootPage->setObjectName("appLaunchPage");
-    this->navigationPane->push(this->rootPage);
-}

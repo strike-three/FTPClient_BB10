@@ -39,8 +39,14 @@
 
 using namespace bb::cascades;
 
+#define ACCOUNT_INFO_FILE_PATH      "/app/native/assets/json/accounts.json"
 #define FTP_PROTOCOL    0
 #define SFTP_PROTOCOL   1
+
+#define SEQUENCE_VERIFY             0
+#define SEQUENCE_LIST_FOLDER        10
+#define SEQUENCE_UPLOAD_FILE        11
+#define SEQUENCE_DOWNLOAD_FILE      12
 
 #define ACTION_CONNECT              (0x00000001U)
 #define ACTION_LOGIN                (0x00000002U)
@@ -48,12 +54,15 @@ using namespace bb::cascades;
 
 
 struct command_meta_data_t{
-    int sequence;
+    uint32_t sequenceId;
+    uint32_t sequence;
     QString url;
     QString uname;
     QString password;
-    int port;
+    int32_t port;
     QString path;
+    bool error;
+    QString errorString;
 };
 
 /*!
@@ -94,6 +103,7 @@ void saveAccountInfo();
 void createFtpInstance();
 void queueFtpCommands(int);
 void startCommand();
+void initCommandMetaData();
 struct command_meta_data_t command_meta_data;
 
 QVariantListDataModel listViewDataModel;
