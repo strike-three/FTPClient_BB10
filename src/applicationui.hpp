@@ -35,7 +35,6 @@
 
 #include <bb/device/DisplayInfo>
 
-#include "Ftpinterface.h"
 
 using namespace bb::cascades;
 
@@ -111,7 +110,6 @@ NavigationPane* navigationPane;
 Page *rootPage;
 ListView *list;
 Label *label;
-Ftp_interface *ftpInterface;
 QFtp *ftp;
 bb::system::InvokeManager *invokemanager;
 bb::device::DisplayInfo *displayInfo;
