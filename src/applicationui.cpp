@@ -117,28 +117,26 @@ int32_t ApplicationUI::readAccountInfo()
     int32_t i;
     QVariant accountInfo;
 
-    if(accountFile.exists())
+    accountFile.open(QIODevice::ReadWrite);
+
+    /* Load account data in List model */
+    accountInfo = data.load(&accountFile);
+    accountFile.close();
+    if(data.hasError())
     {
-        /* Load account data in List model */
-        accountInfo = data.load(filePath);
+        this->label->setText(data.error().errorMessage());
+        qDebug()<<data.error();
+        retval = -1;
+    }
 
-        if(data.hasError())
+    if(retval == 0)
+    {
+        QVariantList list = accountInfo.value<QVariantList>();
+        this->label->setText(QString::number(list.size()) );
+        for(i = 0; i < list.size(); i = i + 1)
         {
-            this->label->setText(data.error().errorMessage());
-            qDebug()<<data.error();
-            retval = -1;
+            this->listViewDataModel << list.at(i).value<QVariantMap>();
         }
-
-        if(retval == 0)
-        {
-            QVariantList list = accountInfo.value<QVariantList>();
-            this->label->setText(QString::number(list.size()) );
-            for(i = 0; i < list.size(); i = i + 1)
-            {
-                this->listViewDataModel << list.at(i).value<QVariantMap>();
-            }
-        }
-
     }
 
     return 0;
@@ -151,13 +149,15 @@ void ApplicationUI::saveAccountInfo()
     bb::data::JsonDataAccess data;
     QVariantList accountData;
 
-    accountFile.resize(0);
+    accountFile.open(QIODevice::ReadWrite);
 
     for(int i = 0; i < this->listViewDataModel.size(); i++)
     {
         accountData.append(this->listViewDataModel.value(i));
     }
-    data.save(accountData, filePath);
+    data.save(accountData, &accountFile);
+
+    accountFile.close();
 }
 
 /*****************************************************************************
@@ -181,6 +181,11 @@ void ApplicationUI::pushFinished(bb::cascades::Page *page)
         this->list->clearSelection();
     }
 
+    if(page->objectName().compare("listContentsPage") == 0)
+    {
+        this->renderContentsPage(page);
+    }
+
 }
 
 void ApplicationUI::popFinished(bb::cascades::Page *page)
@@ -194,10 +199,13 @@ void ApplicationUI::popFinished(bb::cascades::Page *page)
     if(page->objectName().compare("serverEntryEditPage") == 0)
     {
         qDebug()<<"Remove page "<<page->objectName();
-        delete this->ftp;
         page->deleteLater();
     }
 
+    if(page->objectName().compare("listContentsPage") == 0)
+    {
+        page->deleteLater();
+    }
     this->label->setText("Pop finished");
 }
 
@@ -283,7 +291,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                            .bottomMargin(ui->du(2))
                            .backgroundVisible(true)
                            .clearButtonVisible(true);
-    serverName->input()->setSubmitKey(SubmitKey::Done);
+    serverName->input()->setSubmitKey(SubmitKey::Next);
     serverName->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
     addServerContainer->add(serverName);
@@ -301,7 +309,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                            .bottomMargin(ui->du(1))
                            .backgroundVisible(true)
                            .clearButtonVisible(true);
-    serverUrl->input()->setSubmitKey(SubmitKey::Done);
+    serverUrl->input()->setSubmitKey(SubmitKey::Next);
     serverUrl->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
     TextField *userName = TextField::create()
@@ -310,7 +318,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                            .bottomMargin(ui->du(1))
                            .backgroundVisible(true)
                            .clearButtonVisible(true);
-    userName->input()->setSubmitKey(SubmitKey::Done);
+    userName->input()->setSubmitKey(SubmitKey::Next);
     userName->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
     TextField *password = TextField::create()
@@ -320,7 +328,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                            .backgroundVisible(true)
                            .clearButtonVisible(true)
                            .inputMode(TextFieldInputMode::Password);
-    password->input()->setSubmitKey(SubmitKey::Done);
+    password->input()->setSubmitKey(SubmitKey::Next);
     password->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
     addServerContainer->add(serverCredentials);
@@ -343,6 +351,11 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     protocol->add(Option::create().text("SFTP"));
     protocol->setSelectedIndex(0);
 
+    bool res = QObject::connect(protocol, SIGNAL(selectedIndexChanged(int)),
+                                this, SLOT(onProtocolSelected(int)));
+
+    Q_ASSERT(res);
+
     addServerContainer->add(protocolLabel);
     addServerContainer->add(protocol);
 
@@ -361,11 +374,32 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                            .backgroundVisible(true)
                            .clearButtonVisible(true)
                            .inputMode(TextFieldInputMode::NumbersAndPunctuation);
-    port->input()->setSubmitKey(SubmitKey::Done);
-    port->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Lose);
+    port->input()->setSubmitKey(SubmitKey::Next);
+    port->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
     addServerContainer->add(protocolPort);
     addServerContainer->add(port);
+
+    addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
+
+    Label *startPath = Label::create("Start Path")
+                           .objectName("startPath")
+                           .horizontal(HorizontalAlignment::Fill)
+                           .bottomMargin(ui->du(1));
+    protocolPort->textStyle()->setFontSize(FontSize::Small);
+
+    TextField *startPathText = TextField::create()
+                           .objectName("startPathText")
+                           .hintText("/")
+                           .bottomMargin(ui->du(1))
+                           .backgroundVisible(true)
+                           .clearButtonVisible(true)
+                           .inputMode(TextFieldInputMode::NumbersAndPunctuation);
+    startPathText->input()->setSubmitKey(SubmitKey::Done);
+    startPathText->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Lose);
+
+    addServerContainer->add(startPath);
+    addServerContainer->add(startPathText);
 
     addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
 
@@ -379,7 +413,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                             .objectName("saveButton")
                             .rightMargin(ui->du(2))
                             .layoutProperties(StackLayoutProperties::create().spaceQuota(1));
-    bool res = QObject::connect(saveButton, SIGNAL(clicked()),
+    res = QObject::connect(saveButton, SIGNAL(clicked()),
                                 this, SLOT(onServerSave()));
     Q_ASSERT(res);
 
@@ -435,7 +469,23 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     }
 }
 
+void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
+{
+    if(this->label->text().toInt() < this->listViewDataModel.size())
+    {
+        QVariantMap map = this->listViewDataModel.value(this->label->text().toInt()).toMap();
+        qDebug()<<"Listing for server "<<map["name"].toString();
 
+//        serverUrl->setText(map["url"].toString());
+//        userName->setText(map["uname"].toString());
+//        password->setText(map["password"].toString());
+    }
+    else
+    {
+        qDebug()<<"Index Out of range ";
+    }
+
+}
 /*****************************************************************************
  *                  Signals / slots
  * ***************************************************************************/
@@ -478,6 +528,7 @@ void ApplicationUI::onServerSave()
     map["protocol"] = this->navigationPane->at(1)->findChild<DropDown *>("protocol")->selectedOption()->text();
     map["port"] = this->navigationPane->at(1)->findChild<TextField *>("port")->text().toUInt();
     map["connstatus"] = true;
+    map["startPath"] = this->navigationPane->at(1)->findChild<TextField *>("startPathText")->text();
 
     if(this->navigationPane->at(1)->findChild<TextField *>("operation")->text()
             .compare("editEntry") == 0)
@@ -528,6 +579,28 @@ void ApplicationUI::serverConnTestFinished()
     else
     {
         qDebug()<<"Verification success";
+    }
+    this->ftp->deleteLater();
+}
+
+void ApplicationUI::onServerTriggered(QVariantList index)
+{
+    Page *listContentsPage = Page::create()
+        .objectName("listContentsPage");
+    this->label->setText(index.at(0).toString());
+    this->navigationPane->push(listContentsPage);
+}
+
+void ApplicationUI::onProtocolSelected(int index)
+{
+    this->navigationPane->top()->findChild<TextField *>("port")->setLocallyFocused(true);
+    if(index == FTP_PROTOCOL)
+    {
+        this->navigationPane->top()->findChild<TextField *>("port")->setText("21");
+    }
+    else
+    {
+        this->navigationPane->top()->findChild<TextField *>("port")->setText("452");
     }
 
 }

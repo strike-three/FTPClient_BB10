@@ -90,6 +90,8 @@ private slots:
     void onFtpCommandStarted(int);
     void onFtpCommandFinished(int, bool);
     void serverConnTestFinished();
+    void onServerTriggered(QVariantList);
+    void onProtocolSelected(int);
 
 signals:
     void verificationFinished();
@@ -97,6 +99,7 @@ signals:
 private:
 void renderServerListPage(bb::cascades::Page*, bool);
 void renderAddServerPage(bb::cascades::Page*, bool, int);
+void renderContentsPage(bb::cascades::Page*);
 int32_t readAccountInfo();
 void saveAccountInfo();
 void createFtpInstance();
