@@ -204,7 +204,8 @@ void ApplicationUI::popFinished(bb::cascades::Page *page)
 
     if(page->objectName().compare("listContentsPage") == 0)
     {
-        page->deleteLater();
+        qDebug()<<"Remove page "<<page->objectName();
+//        page->deleteLater();
     }
     this->label->setText("Pop finished");
 }
@@ -463,6 +464,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
             protocol->setSelectedIndex(SFTP_PROTOCOL);
         }
         port->setText(map["port"].toString());
+        startPathText->setText(map["startPathText"].toString());
 
         operation->setText("editEntry");
         entryindex->setText(QString::number(index));
@@ -471,19 +473,40 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
 
 void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
 {
-    if(this->label->text().toInt() < this->listViewDataModel.size())
-    {
-        QVariantMap map = this->listViewDataModel.value(this->label->text().toInt()).toMap();
-        qDebug()<<"Listing for server "<<map["name"].toString();
+    QVariantMap map = this->listViewDataModel.value(this->label->text().toInt()).toMap();
+    qDebug()<<"Listing for server "<<map["name"].toString();
 
-//        serverUrl->setText(map["url"].toString());
-//        userName->setText(map["uname"].toString());
-//        password->setText(map["password"].toString());
-    }
-    else
-    {
-        qDebug()<<"Index Out of range ";
-    }
+    Container *contentsListContainer = new Container();
+//    listContainer->setBackground(Color::Yellow);
+    contentsListContainer->setLayout(DockLayout::create());
+    contentsListContainer->setHorizontalAlignment(HorizontalAlignment::Fill);
+    UIConfig *ui = contentsListContainer->ui();
+    contentsListContainer->setLeftPadding(ui->du(1));
+    contentsListContainer->setRightPadding(ui->du(1));
+
+    ListView *contentsList = new ListView();
+    GroupDataModel *contentsData = new GroupDataModel(QStringList() << "type" << "name");
+    contentsData->setObjectName("contentsData");
+    contentsData->setGrouping(ItemGrouping::None);
+    contentsList->setDataModel(contentsData);
+    contentsList->setObjectName("contentsList");
+    contentsListContainer->add(contentsList);
+
+    page->setContent(contentsListContainer);
+
+    this->initCommandMetaData();
+    this->createFtpInstance();
+
+    this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
+    /* Enter command meta data */
+    this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER | ACTION_DISCONNECT;
+    this->command_meta_data.url = map["url"].toString();
+    this->command_meta_data.uname = map["uname"].toString();
+    this->command_meta_data.password = map["password"].toString();
+    this->command_meta_data.port = map["port"].toInt();
+    this->command_meta_data.path = map["startPathText"].toString();
+
+    this->startCommand();
 
 }
 /*****************************************************************************
@@ -605,6 +628,35 @@ void ApplicationUI::onProtocolSelected(int index)
 
 }
 
+void ApplicationUI::onListInfo(const QUrlInfo& contentInfo)
+{
+    QString info;
+    QVariantMap map;
+    if(contentInfo.isValid())
+    {
+        if(contentInfo.isDir())
+        {
+            map["type"] = "Directory";
+            map["name"] = contentInfo.name();
+            this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->insert(map);
+        }
+
+        if(contentInfo.isExecutable())
+        {
+            map["type"] = "Application";
+            map["name"] = contentInfo.name();
+            this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->insert(map);
+        }
+
+        if(contentInfo.isFile())
+        {
+            map["type"] = "File";
+            map["name"] = contentInfo.name();
+            this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->insert(map);
+        }
+    }
+
+}
 /*****************************************************************************
  *                  FTP methods
  * ***************************************************************************/
@@ -624,7 +676,6 @@ void ApplicationUI::initCommandMetaData()
 
 
 
-
 void ApplicationUI::createFtpInstance()
 {
     this->ftp = new QFtp();
@@ -640,6 +691,11 @@ void ApplicationUI::createFtpInstance()
     res = QObject::connect(ftp, SIGNAL(commandFinished(int, bool)),
                                 this, SLOT(onFtpCommandFinished(int, bool)));
     Q_ASSERT(res);
+
+    res = QObject::connect(ftp, SIGNAL(listInfo(const QUrlInfo&)),
+                                this, SLOT(onListInfo(const QUrlInfo&)));
+    Q_ASSERT(res);
+
 }
 
 void ApplicationUI::startCommand()
@@ -654,6 +710,11 @@ void ApplicationUI::startCommand()
     {
         this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_LOGIN);
         qDebug()<<"Command " <<this->ftp->login(this->command_meta_data.uname, this->command_meta_data.password);
+    }
+    else if(this->command_meta_data.sequence & ACTION_LIST_FOLDER)
+    {
+        this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_LIST_FOLDER);
+        qDebug()<<"Command " <<this->ftp->list(this->command_meta_data.path);
     }
     else if(this->command_meta_data.sequence & ACTION_DISCONNECT)
     {
@@ -699,6 +760,11 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
         if(this->command_meta_data.sequenceId == SEQUENCE_VERIFY)
         {
             emit this->verificationFinished();
+        }
+
+        if(this->command_meta_data.sequenceId == SEQUENCE_LIST_FOLDER)
+        {
+            emit this->folderListingFinished();
         }
     }
 }

@@ -27,6 +27,7 @@
 #include <bb/cascades/NavigationPane>
 
 #include <bb/cascades/QListDataModel>
+#include <bb/cascades/GroupDataModel>
 #include <bb/cascades/ListView>
 #include <bb/cascades/Label>
 
@@ -50,7 +51,7 @@ using namespace bb::cascades;
 #define ACTION_CONNECT              (0x00000001U)
 #define ACTION_LOGIN                (0x00000002U)
 #define ACTION_DISCONNECT           (0x00000004U)
-
+#define ACTION_LIST_FOLDER          (0x00000010U)
 
 struct command_meta_data_t{
     uint32_t sequenceId;
@@ -92,9 +93,11 @@ private slots:
     void serverConnTestFinished();
     void onServerTriggered(QVariantList);
     void onProtocolSelected(int);
+    void onListInfo(const QUrlInfo&);
 
 signals:
     void verificationFinished();
+    void folderListingFinished();
 
 private:
 void renderServerListPage(bb::cascades::Page*, bool);
@@ -108,6 +111,7 @@ void startCommand();
 void initCommandMetaData();
 struct command_meta_data_t command_meta_data;
 
+//ArrayDataModel contentsData;
 QVariantListDataModel listViewDataModel;
 NavigationPane* navigationPane;
 Page *rootPage;
