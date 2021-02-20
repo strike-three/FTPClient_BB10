@@ -95,7 +95,7 @@ private slots:
     void onProtocolSelected(int);
     void onListInfo(const QUrlInfo&);
     void onContentItemTriggered(QVariantList);
-    void onContentsPageBack();
+    void onCustomBackButton();
 
 signals:
     void verificationFinished();

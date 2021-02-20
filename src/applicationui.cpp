@@ -193,18 +193,21 @@ void ApplicationUI::popFinished(bb::cascades::Page *page)
     if(page->objectName().compare("addServerPage") == 0)
     {
         qDebug()<<"Remove page "<<page->objectName();
+        this->initCommandMetaData();
         page->deleteLater();
     }
 
     if(page->objectName().compare("serverEntryEditPage") == 0)
     {
         qDebug()<<"Remove page "<<page->objectName();
+        this->initCommandMetaData();
         page->deleteLater();
     }
 
     if(page->objectName().compare("listContentsPage") == 0)
     {
         qDebug()<<"Remove page "<<page->objectName();
+        this->initCommandMetaData();
 //        page->deleteLater();
     }
     this->label->setText("Pop finished");
@@ -500,7 +503,6 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
 
     page->setContent(contentsListContainer);
 
-    this->initCommandMetaData();
     this->createFtpInstance();
 
     this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
@@ -670,11 +672,17 @@ void ApplicationUI::onContentItemTriggered(QVariantList index)
 
     if(item["type"].toString().compare("Directory") == 0)
     {
-        qDebug()<<"getting listing for directory "<<item["name"].toString();
         this->command_meta_data.path.append(item["name"].toString());
-        qDebug()<<"path "<<this->command_meta_data.path.join("/");
+        qDebug()<<"setting pane properties";
+        /* Set custom back button for the navigation pane */
+        ActionItem *customBack = ActionItem::create()
+                                    .title("Up")
+                                    .imageSource(QUrl("asset:///ic_previous.png"))
+                                    .onTriggered(this, SLOT(onCustomBackButton()));
 
-        this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->clear();
+        NavigationPaneProperties *navigationPaneProperties = new NavigationPaneProperties();
+        navigationPaneProperties->setBackButton(customBack);
+        this->navigationPane->top()->setPaneProperties(navigationPaneProperties);
 
         this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER | ACTION_DISCONNECT;
         this->startCommand();
@@ -682,9 +690,25 @@ void ApplicationUI::onContentItemTriggered(QVariantList index)
     }
 }
 
-void ApplicationUI::onContentsPageBack()
+void ApplicationUI::onCustomBackButton()
 {
 
+    if(this->command_meta_data.path.size() > 1)
+    {
+        this ->command_meta_data.path.removeLast();
+    }
+
+    qDebug()<<"Custom back button"  << this->command_meta_data.path.join("/");
+
+    if(this->command_meta_data.path.size() == 1)
+    {
+        /* listing for the previous folder */
+
+        this->navigationPane->top()->resetPaneProperties();
+    }
+
+    this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER | ACTION_DISCONNECT;
+    this->startCommand();
 }
 /*****************************************************************************
  *                  FTP methods
@@ -733,22 +757,25 @@ void ApplicationUI::startCommand()
     if(this->command_meta_data.sequence & ACTION_CONNECT)
     {
         this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_CONNECT);
-        qDebug()<<"Command " <<this->ftp->connectToHost(this->command_meta_data.url, this->command_meta_data.port);
+        this->ftp->connectToHost(this->command_meta_data.url, this->command_meta_data.port);
     }
     else if(this->command_meta_data.sequence & ACTION_LOGIN)
     {
         this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_LOGIN);
-        qDebug()<<"Command " <<this->ftp->login(this->command_meta_data.uname, this->command_meta_data.password);
+        this->ftp->login(this->command_meta_data.uname, this->command_meta_data.password);
     }
     else if(this->command_meta_data.sequence & ACTION_LIST_FOLDER)
     {
         this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_LIST_FOLDER);
-        qDebug()<<"Command " <<this->ftp->list(this->command_meta_data.path.join("/"));
+
+        this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->clear();
+
+        this->ftp->list(this->command_meta_data.path.join("/"));
     }
     else if(this->command_meta_data.sequence & ACTION_DISCONNECT)
     {
         this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_DISCONNECT);
-        qDebug()<<"Command " <<this->ftp->close();
+        this->ftp->close();
     }
 
 }
@@ -758,18 +785,18 @@ void ApplicationUI::onFtpStateChanged(int state)
 {
     if(this->navigationPane->top()->objectName().compare("serverEntryEditPage") == 0)
     {
-        qDebug()<<"State "<<state;
+//        qDebug()<<"State "<<state;
     }
 }
 
 void ApplicationUI::onFtpCommandStarted(int cmdId)
 {
-    qDebug()<<" Command started "<<cmdId;
+//    qDebug()<<" Command started "<<cmdId;
 }
 
 void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
 {
-    qDebug()<<"Command finished "<<cmdId<<" error "<< error;
+//    qDebug()<<"Command finished "<<cmdId<<" error "<< error;
 
     if(error)
     {
