@@ -37,6 +37,7 @@
 #include <bb/data/JsonDataAccess>
 
 #include <src/ServerListItemFactory.h>
+#include <src/ContentListItemFactory.h>
 
 using namespace bb::cascades;
 
@@ -477,6 +478,8 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
 
 void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
 {
+    ContentListItemFactory *contentListItemFactory = new ContentListItemFactory();
+
     QVariantMap map = this->listViewDataModel.value(this->label->text().toInt()).toMap();
     qDebug()<<"Listing for server "<<map["name"].toString();
 
@@ -489,6 +492,7 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
     contentsListContainer->setRightPadding(ui->du(1));
 
     ListView *contentsList = new ListView();
+    contentsList->setListItemProvider(contentListItemFactory);
     GroupDataModel *contentsData = new GroupDataModel(QStringList() << "type" << "name");
     contentsData->setObjectName("contentsData");
     contentsData->setGrouping(ItemGrouping::None);
