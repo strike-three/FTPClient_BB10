@@ -60,7 +60,7 @@ struct command_meta_data_t{
     QString uname;
     QString password;
     int32_t port;
-    QString path;
+    QStringList path;
     bool error;
     QString errorString;
 };
@@ -94,6 +94,8 @@ private slots:
     void onServerTriggered(QVariantList);
     void onProtocolSelected(int);
     void onListInfo(const QUrlInfo&);
+    void onContentItemTriggered(QVariantList);
+    void onContentsPageBack();
 
 signals:
     void verificationFinished();

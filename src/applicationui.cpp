@@ -395,7 +395,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                            .bottomMargin(ui->du(1))
                            .backgroundVisible(true)
                            .clearButtonVisible(true)
-                           .inputMode(TextFieldInputMode::NumbersAndPunctuation);
+                           .inputMode(TextFieldInputMode::Default);
     startPathText->input()->setSubmitKey(SubmitKey::Done);
     startPathText->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Lose);
 
@@ -464,7 +464,8 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
             protocol->setSelectedIndex(SFTP_PROTOCOL);
         }
         port->setText(map["port"].toString());
-        startPathText->setText(map["startPathText"].toString());
+
+        startPathText->setText(map["startPath"].toString());
 
         operation->setText("editEntry");
         entryindex->setText(QString::number(index));
@@ -492,6 +493,11 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
     contentsList->setObjectName("contentsList");
     contentsListContainer->add(contentsList);
 
+    bool res = QObject::connect(contentsList, SIGNAL(triggered(QVariantList)),
+                                this, SLOT(onContentItemTriggered(QVariantList)));
+
+    Q_ASSERT(res);
+
     page->setContent(contentsListContainer);
 
     this->initCommandMetaData();
@@ -504,7 +510,7 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
     this->command_meta_data.uname = map["uname"].toString();
     this->command_meta_data.password = map["password"].toString();
     this->command_meta_data.port = map["port"].toInt();
-    this->command_meta_data.path = map["startPathText"].toString();
+    this->command_meta_data.path.append(map["startPath"].toString());
 
     this->startCommand();
 
@@ -657,6 +663,29 @@ void ApplicationUI::onListInfo(const QUrlInfo& contentInfo)
     }
 
 }
+
+void ApplicationUI::onContentItemTriggered(QVariantList index)
+{
+    QVariantMap item = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(index).toMap();
+
+    if(item["type"].toString().compare("Directory") == 0)
+    {
+        qDebug()<<"getting listing for directory "<<item["name"].toString();
+        this->command_meta_data.path.append(item["name"].toString());
+        qDebug()<<"path "<<this->command_meta_data.path.join("/");
+
+        this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->clear();
+
+        this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER | ACTION_DISCONNECT;
+        this->startCommand();
+
+    }
+}
+
+void ApplicationUI::onContentsPageBack()
+{
+
+}
 /*****************************************************************************
  *                  FTP methods
  * ***************************************************************************/
@@ -714,7 +743,7 @@ void ApplicationUI::startCommand()
     else if(this->command_meta_data.sequence & ACTION_LIST_FOLDER)
     {
         this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_LIST_FOLDER);
-        qDebug()<<"Command " <<this->ftp->list(this->command_meta_data.path);
+        qDebug()<<"Command " <<this->ftp->list(this->command_meta_data.path.join("/"));
     }
     else if(this->command_meta_data.sequence & ACTION_DISCONNECT)
     {
