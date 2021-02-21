@@ -646,6 +646,7 @@ void ApplicationUI::onListInfo(const QUrlInfo& contentInfo)
     QVariantMap map;
     if(contentInfo.isValid())
     {
+        qDebug()<<contentInfo.isDir()<<" "<<contentInfo.name();
         if(contentInfo.isDir())
         {
             map["type"] = "Directory";
@@ -787,6 +788,7 @@ void ApplicationUI::startCommand()
 
 void ApplicationUI::onFtpStateChanged(int state)
 {
+    Q_UNUSED(state);
     if(this->navigationPane->top()->objectName().compare("serverEntryEditPage") == 0)
     {
 //        qDebug()<<"State "<<state;
@@ -795,11 +797,19 @@ void ApplicationUI::onFtpStateChanged(int state)
 
 void ApplicationUI::onFtpCommandStarted(int cmdId)
 {
-//    qDebug()<<" Command started "<<cmdId;
+    Q_UNUSED(cmdId);
+//    qDebug()<<"Command started "<<this->ftp->currentCommand();
+
+//    if(this->ftp->currentCommand() == QFtp::List)
+//    {
+//        qDebug()<<"List size "<<this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->size();
+//    }
 }
 
 void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
 {
+    Q_UNUSED(cmdId);
+    Q_UNUSED(error);
 //    qDebug()<<"Command finished "<<cmdId<<" error "<< error;
 
     if(error)

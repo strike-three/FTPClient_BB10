@@ -23,7 +23,7 @@ public:
     void updateListItem(const QVariant &data);
 
 private:
-    ImageView *imageView;
+    ImageView *contentIcon;
     Label *contentName;
 };
 
