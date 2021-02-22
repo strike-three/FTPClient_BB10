@@ -48,6 +48,9 @@ ApplicationUI::ApplicationUI() :
 
     this->displayInfo = new bb::device::DisplayInfo();
     this->invokemanager = new bb::system::InvokeManager();
+    this->sysDialog = new bb::system::SystemDialog(NULL, "Cancel");
+    this->sysDialog->setActivityIndicatorVisible(true);
+    this->sysDialog->setButtonAreaLimit(1);
 
     this->list = 0;
     this->label = new Label();
@@ -798,12 +801,30 @@ void ApplicationUI::onFtpStateChanged(int state)
 void ApplicationUI::onFtpCommandStarted(int cmdId)
 {
     Q_UNUSED(cmdId);
-//    qDebug()<<"Command started "<<this->ftp->currentCommand();
+    qDebug()<<"Command " << this->ftp->currentCommand();
+    switch(this->ftp->currentCommand())
+    {
+        case QFtp::ConnectToHost:
+            this->sysDialog->setBody("Connect to host");
+            break;
 
-//    if(this->ftp->currentCommand() == QFtp::List)
-//    {
-//        qDebug()<<"List size "<<this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->size();
-//    }
+        case QFtp::Login:
+            this->sysDialog->setBody("Logging in,,");
+            break;
+
+        case QFtp::Close:
+            this->sysDialog->setBody("Logging out..");
+            break;
+
+        case QFtp::List:
+            this->sysDialog->setBody("Getting folder contents..");
+            break;
+
+        default:
+            this->sysDialog->setBody("Unknown command");
+            break;
+    }
+    this->sysDialog->show();
 }
 
 void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
@@ -827,6 +848,8 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
     }
     else
     {
+        this->sysDialog->cancel();
+
         if(this->command_meta_data.sequenceId == SEQUENCE_VERIFY)
         {
             emit this->verificationFinished();

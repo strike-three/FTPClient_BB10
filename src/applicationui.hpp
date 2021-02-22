@@ -36,6 +36,7 @@
 
 #include <bb/device/DisplayInfo>
 
+#include <bb/system/SystemDialog>
 
 using namespace bb::cascades;
 
@@ -122,6 +123,7 @@ Label *label;
 QFtp *ftp;
 bb::system::InvokeManager *invokemanager;
 bb::device::DisplayInfo *displayInfo;
+bb::system::SystemDialog *sysDialog;
 };
 
 #endif /* ApplicationUI_HPP_ */
