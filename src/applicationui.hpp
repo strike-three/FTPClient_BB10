@@ -48,6 +48,8 @@ using namespace bb::cascades;
 #define SEQUENCE_LIST_FOLDER        10
 #define SEQUENCE_UPLOAD_FILE        11
 #define SEQUENCE_DOWNLOAD_FILE      12
+#define SEQUENCE_CLOSE              20
+
 
 #define ACTION_CONNECT              (0x00000001U)
 #define ACTION_LOGIN                (0x00000002U)
@@ -76,7 +78,7 @@ class ApplicationUI : public QObject
     Q_OBJECT
 public:
     ApplicationUI();
-    virtual ~ApplicationUI() {}
+    ~ApplicationUI();
 
 public slots:
     void onInvoke(const bb::system::InvokeRequest&);
