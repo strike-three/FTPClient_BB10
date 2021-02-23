@@ -52,6 +52,8 @@ ApplicationUI::ApplicationUI() :
     this->sysDialog->setActivityIndicatorVisible(true);
     this->sysDialog->setButtonAreaLimit(1);
 
+    this->ftp = new QFtp();
+
     this->list = 0;
     this->label = new Label();
     bool res = QObject::connect(this->invokemanager,
@@ -100,6 +102,13 @@ ApplicationUI::ApplicationUI() :
             renderServerListPage(this->rootPage, false);
             break;
     }
+}
+
+ApplicationUI::~ApplicationUI()
+{
+    delete this->ftp;
+    delete this->sysDialog;
+    delete this->label;
 }
 
 void ApplicationUI::onInvoke(const bb::system::InvokeRequest& data)
@@ -508,13 +517,23 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
 
     Q_ASSERT(res);
 
+    /* Set custom back button for the navigation pane */
+    ActionItem *customBack = ActionItem::create()
+                                .title("Up")
+                                .imageSource(QUrl("asset:///ic_previous.png"))
+                                .onTriggered(this, SLOT(onCustomBackButton()));
+
+    NavigationPaneProperties *navigationPaneProperties = new NavigationPaneProperties();
+    navigationPaneProperties->setBackButton(customBack);
+    this->navigationPane->top()->setPaneProperties(navigationPaneProperties);
+
     page->setContent(contentsListContainer);
 
     this->createFtpInstance();
 
     this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
     /* Enter command meta data */
-    this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER | ACTION_DISCONNECT;
+    this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER;
     this->command_meta_data.url = map["url"].toString();
     this->command_meta_data.uname = map["uname"].toString();
     this->command_meta_data.password = map["password"].toString();
@@ -618,7 +637,6 @@ void ApplicationUI::serverConnTestFinished()
     {
         qDebug()<<"Verification success";
     }
-    this->ftp->deleteLater();
 }
 
 void ApplicationUI::onServerTriggered(QVariantList index)
@@ -681,18 +699,16 @@ void ApplicationUI::onContentItemTriggered(QVariantList index)
     if(item["type"].toString().compare("Directory") == 0)
     {
         this->command_meta_data.path.append(item["name"].toString());
-        qDebug()<<"setting pane properties";
-        /* Set custom back button for the navigation pane */
-        ActionItem *customBack = ActionItem::create()
-                                    .title("Up")
-                                    .imageSource(QUrl("asset:///ic_previous.png"))
-                                    .onTriggered(this, SLOT(onCustomBackButton()));
 
-        NavigationPaneProperties *navigationPaneProperties = new NavigationPaneProperties();
-        navigationPaneProperties->setBackButton(customBack);
-        this->navigationPane->top()->setPaneProperties(navigationPaneProperties);
+        if(this->ftp->state() < QFtp::LoggedIn)
+        {
+            this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER;
+        }
+        else
+        {
+            this->command_meta_data.sequence = ACTION_LIST_FOLDER;
+        }
 
-        this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER | ACTION_DISCONNECT;
         this->startCommand();
 
     }
@@ -704,19 +720,30 @@ void ApplicationUI::onCustomBackButton()
     if(this->command_meta_data.path.size() > 1)
     {
         this ->command_meta_data.path.removeLast();
+
+//        if(this->command_meta_data.path.size() == 1)
+//        {
+//            /* listing for the previous folder */
+//
+//            this->navigationPane->top()->resetPaneProperties();
+//        }
+        if(this->ftp->state() < QFtp::LoggedIn)
+        {
+            this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER;
+        }
+        else
+        {
+
+            this->command_meta_data.sequence = ACTION_LIST_FOLDER;
+        }
+        this->startCommand();
     }
-
-    qDebug()<<"Custom back button"  << this->command_meta_data.path.join("/");
-
-    if(this->command_meta_data.path.size() == 1)
+    else
     {
-        /* listing for the previous folder */
-
-        this->navigationPane->top()->resetPaneProperties();
+        this->command_meta_data.sequenceId = SEQUENCE_CLOSE;
+        this->command_meta_data.sequence = ACTION_DISCONNECT;
+        this->startCommand();
     }
-
-    this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER | ACTION_DISCONNECT;
-    this->startCommand();
 }
 /*****************************************************************************
  *                  FTP methods
@@ -858,6 +885,11 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
         if(this->command_meta_data.sequenceId == SEQUENCE_LIST_FOLDER)
         {
             emit this->folderListingFinished();
+        }
+
+        if(this->command_meta_data.sequenceId == SEQUENCE_CLOSE)
+        {
+            this->navigationPane->pop();
         }
     }
 }
