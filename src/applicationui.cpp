@@ -517,6 +517,17 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
 
     Q_ASSERT(res);
 
+    ActionSet *contentsListActions = ActionSet::create().title("Actions");
+
+    ActionItem *downloadItem = ActionItem::create()
+                                        .title("Download")
+                                        .image(Image("asset:///ic_download.amd"))
+                                        .onTriggered(this, SLOT(onItemDownload()));
+
+    contentsListActions->add(downloadItem);
+
+    contentsList->addActionSet(contentsListActions);
+
     /* Set custom back button for the navigation pane */
     ActionItem *customBack = ActionItem::create()
                                 .title("Up")
@@ -667,7 +678,7 @@ void ApplicationUI::onListInfo(const QUrlInfo& contentInfo)
     QVariantMap map;
     if(contentInfo.isValid())
     {
-        qDebug()<<contentInfo.isDir()<<" "<<contentInfo.name();
+//        qDebug()<<contentInfo.isDir()<<" "<<contentInfo.name();
         if(contentInfo.isDir())
         {
             map["type"] = "Directory";
@@ -699,7 +710,7 @@ void ApplicationUI::onContentItemTriggered(QVariantList index)
     if(item["type"].toString().compare("Directory") == 0)
     {
         this->command_meta_data.path.append(item["name"].toString());
-
+        this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
         if(this->ftp->state() < QFtp::LoggedIn)
         {
             this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER;
@@ -720,7 +731,7 @@ void ApplicationUI::onCustomBackButton()
     if(this->command_meta_data.path.size() > 1)
     {
         this ->command_meta_data.path.removeLast();
-
+        this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
 //        if(this->command_meta_data.path.size() == 1)
 //        {
 //            /* listing for the previous folder */
@@ -745,6 +756,35 @@ void ApplicationUI::onCustomBackButton()
         this->startCommand();
     }
 }
+
+void ApplicationUI::onDataTransferProgress(qint64 done, qint64 total)
+{
+    qDebug()<<"Transfered "<<done<<" of "<<total;
+}
+
+void ApplicationUI::onItemDownload()
+{
+    QVariantList index = this->navigationPane->top()->findChild<ListView *>("contentsList")->selected();
+    QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(index).toMap();
+    qDebug()<<"Selected "<<index << " "<<map["name"].toString();
+    if(map["type"].toString().compare("File") == 0)
+    {
+        this->command_meta_data.path.append(map["name"].toString());
+        this->command_meta_data.sequenceId = SEQUENCE_DOWNLOAD_FILE;
+        if(this->ftp->state() < QFtp::LoggedIn)
+        {
+            this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_DOWNLOAD_FILE;
+        }
+        else
+        {
+
+            this->command_meta_data.sequence = ACTION_DOWNLOAD_FILE;
+        }
+        this->startCommand();
+    }
+
+}
+
 /*****************************************************************************
  *                  FTP methods
  * ***************************************************************************/
@@ -784,6 +824,10 @@ void ApplicationUI::createFtpInstance()
                                 this, SLOT(onListInfo(const QUrlInfo&)));
     Q_ASSERT(res);
 
+    res = QObject::connect(ftp, SIGNAL(dataTransferProgress(qint64, qint64)),
+                                this, SLOT(onDataTransferProgress(qint64, qint64)));
+    Q_ASSERT(res);
+
 }
 
 void ApplicationUI::startCommand()
@@ -806,6 +850,13 @@ void ApplicationUI::startCommand()
         this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->clear();
 
         this->ftp->list(this->command_meta_data.path.join("/"));
+    }
+    else if(this->command_meta_data.sequence & ACTION_DOWNLOAD_FILE)
+    {
+        this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_DOWNLOAD_FILE);
+
+        this->ftp->get(this->command_meta_data.path.join("/"),
+                        this->destFile(this->command_meta_data.path.last()));
     }
     else if(this->command_meta_data.sequence & ACTION_DISCONNECT)
     {
@@ -836,7 +887,7 @@ void ApplicationUI::onFtpCommandStarted(int cmdId)
             break;
 
         case QFtp::Login:
-            this->sysDialog->setBody("Logging in,,");
+            this->sysDialog->setBody("Logging in..");
             break;
 
         case QFtp::Close:
@@ -845,6 +896,10 @@ void ApplicationUI::onFtpCommandStarted(int cmdId)
 
         case QFtp::List:
             this->sysDialog->setBody("Getting folder contents..");
+            break;
+
+        case QFtp::Get:
+            this->sysDialog->setBody("Downloading..");
             break;
 
         default:
@@ -891,6 +946,23 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
         {
             this->navigationPane->pop();
         }
+
+        if(this->command_meta_data.sequenceId == SEQUENCE_DOWNLOAD_FILE)
+        {
+            this->ftp->currentDevice()->close();
+        }
     }
 }
 
+QFile *ApplicationUI::destFile(QString name)
+{
+
+    QString path = QDir::currentPath() + "/shared/documents/" + name;
+    QFile *file = new QFile(path);
+
+    qDebug()<<path;
+    file->open(QIODevice::WriteOnly);
+
+    this->command_meta_data.path.removeLast();
+    return file;
+}

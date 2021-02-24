@@ -55,6 +55,7 @@ using namespace bb::cascades;
 #define ACTION_LOGIN                (0x00000002U)
 #define ACTION_DISCONNECT           (0x00000004U)
 #define ACTION_LIST_FOLDER          (0x00000010U)
+#define ACTION_DOWNLOAD_FILE        (0x00000020U)
 
 struct command_meta_data_t{
     uint32_t sequenceId;
@@ -99,6 +100,8 @@ private slots:
     void onListInfo(const QUrlInfo&);
     void onContentItemTriggered(QVariantList);
     void onCustomBackButton();
+    void onItemDownload();
+    void onDataTransferProgress(qint64 done, qint64 total);
 
 signals:
     void verificationFinished();
@@ -111,9 +114,9 @@ void renderContentsPage(bb::cascades::Page*);
 int32_t readAccountInfo();
 void saveAccountInfo();
 void createFtpInstance();
-void queueFtpCommands(int);
 void startCommand();
 void initCommandMetaData();
+QFile *destFile(QString);
 struct command_meta_data_t command_meta_data;
 
 //ArrayDataModel contentsData;
