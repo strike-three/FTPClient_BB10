@@ -65,6 +65,7 @@ struct command_meta_data_t{
     QString password;
     int32_t port;
     QStringList path;
+    QFile *ioDevice;
     bool error;
     QString errorString;
 };
@@ -102,6 +103,8 @@ private slots:
     void onCustomBackButton();
     void onItemDownload();
     void onDataTransferProgress(qint64 done, qint64 total);
+    void onDownloaDestSelected(const QStringList&);
+    void onDownloadCanceled();
 
 signals:
     void verificationFinished();
@@ -116,7 +119,6 @@ void saveAccountInfo();
 void createFtpInstance();
 void startCommand();
 void initCommandMetaData();
-QFile *destFile(QString);
 struct command_meta_data_t command_meta_data;
 
 //ArrayDataModel contentsData;

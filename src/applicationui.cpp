@@ -34,7 +34,10 @@
 #include <bb/cascades/StackLayoutProperties>
 
 #include <bb/cascades/NavigationPaneProperties>
+
 #include <bb/data/JsonDataAccess>
+
+#include <bb/cascades/pickers/FilePicker>
 
 #include <src/ServerListItemFactory.h>
 #include <src/ContentListItemFactory.h>
@@ -766,7 +769,7 @@ void ApplicationUI::onItemDownload()
 {
     QVariantList index = this->navigationPane->top()->findChild<ListView *>("contentsList")->selected();
     QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(index).toMap();
-    qDebug()<<"Selected "<<index << " "<<map["name"].toString();
+
     if(map["type"].toString().compare("File") == 0)
     {
         this->command_meta_data.path.append(map["name"].toString());
@@ -780,11 +783,40 @@ void ApplicationUI::onItemDownload()
 
             this->command_meta_data.sequence = ACTION_DOWNLOAD_FILE;
         }
-        this->startCommand();
+
+        bb::cascades::pickers::FilePicker *filePicker = new bb::cascades::pickers::FilePicker(
+                                                            bb::cascades::pickers::FileType::Document,
+                                                        0, QStringList(), QStringList(), QStringList(map["name"].toString()));
+        filePicker->setMode(bb::cascades::pickers::FilePickerMode::Saver);
+        filePicker->open();
+
+        bool res = QObject::connect(filePicker, SIGNAL(fileSelected(const QStringList&)),
+                                    this, SLOT(onDownloaDestSelected(const QStringList&)));
+
+        Q_ASSERT(res);
+
+        res = QObject::connect(filePicker, SIGNAL(canceled()),
+                                this, SLOT(onDownloadCanceled()));
+
+        Q_ASSERT(res);
     }
 
 }
 
+void ApplicationUI::onDownloadCanceled()
+{
+    this->command_meta_data.path.removeLast();
+}
+
+void ApplicationUI::onDownloaDestSelected(const QStringList& dest)
+{
+    qDebug()<<"Dest count "<<dest.size();
+    qDebug()<<"Dest "<<dest.at(0);
+
+    this->command_meta_data.ioDevice = new QFile(dest.at(0));
+    this->command_meta_data.ioDevice->open(QIODevice::WriteOnly);
+    this->startCommand();
+}
 /*****************************************************************************
  *                  FTP methods
  * ***************************************************************************/
@@ -856,7 +888,7 @@ void ApplicationUI::startCommand()
         this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_DOWNLOAD_FILE);
 
         this->ftp->get(this->command_meta_data.path.join("/"),
-                        this->destFile(this->command_meta_data.path.last()));
+                        this->command_meta_data.ioDevice);
     }
     else if(this->command_meta_data.sequence & ACTION_DISCONNECT)
     {
@@ -949,20 +981,9 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
 
         if(this->command_meta_data.sequenceId == SEQUENCE_DOWNLOAD_FILE)
         {
+            this->command_meta_data.path.removeLast();
             this->ftp->currentDevice()->close();
         }
     }
 }
 
-QFile *ApplicationUI::destFile(QString name)
-{
-
-    QString path = QDir::currentPath() + "/shared/documents/" + name;
-    QFile *file = new QFile(path);
-
-    qDebug()<<path;
-    file->open(QIODevice::WriteOnly);
-
-    this->command_meta_data.path.removeLast();
-    return file;
-}
