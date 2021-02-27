@@ -38,6 +38,8 @@
 
 #include <bb/system/SystemDialog>
 
+#include <src/CommandMetaData.h>
+
 using namespace bb::cascades;
 
 #define ACCOUNT_INFO_FILE_PATH      "/data/accounts.json"
@@ -51,21 +53,8 @@ using namespace bb::cascades;
 #define SEQUENCE_CLOSE              20
 
 
-#define ACTION_CONNECT              (0x00000001U)
-#define ACTION_LOGIN                (0x00000002U)
-#define ACTION_DISCONNECT           (0x00000004U)
-#define ACTION_LIST_FOLDER          (0x00000010U)
-#define ACTION_DOWNLOAD_FILE        (0x00000020U)
-
 struct command_meta_data_t{
     uint32_t sequenceId;
-    uint32_t sequence;
-    QString url;
-    QString uname;
-    QString password;
-    int32_t port;
-    QStringList path;
-    QFile *ioDevice;
     bool error;
     QString errorString;
 };
@@ -95,7 +84,7 @@ private slots:
     void onFtpStateChanged(int);
     void onFtpCommandStarted(int);
     void onFtpCommandFinished(int, bool);
-    void serverConnTestFinished();
+    void onServerConnTestFinished();
     void onServerTriggered(QVariantList);
     void onProtocolSelected(int);
     void onListInfo(const QUrlInfo&);
@@ -120,6 +109,7 @@ void createFtpInstance();
 void startCommand();
 void initCommandMetaData();
 struct command_meta_data_t command_meta_data;
+CommandMetaData *commandMetaData;
 
 //ArrayDataModel contentsData;
 QVariantListDataModel listViewDataModel;

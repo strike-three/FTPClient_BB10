@@ -48,6 +48,8 @@ ApplicationUI::ApplicationUI() :
         QObject()
 {
     this->rootPage = new Page();
+    /* Create and initialise the command meta data */
+    this->commandMetaData = new CommandMetaData();
 
     this->displayInfo = new bb::device::DisplayInfo();
     this->invokemanager = new bb::system::InvokeManager();
@@ -210,14 +212,12 @@ void ApplicationUI::popFinished(bb::cascades::Page *page)
     if(page->objectName().compare("addServerPage") == 0)
     {
         qDebug()<<"Remove page "<<page->objectName();
-        this->initCommandMetaData();
         page->deleteLater();
     }
 
     if(page->objectName().compare("serverEntryEditPage") == 0)
     {
         qDebug()<<"Remove page "<<page->objectName();
-        this->initCommandMetaData();
         page->deleteLater();
     }
 
@@ -546,14 +546,21 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
 
     this->createFtpInstance();
 
-    this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
     /* Enter command meta data */
-    this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER;
-    this->command_meta_data.url = map["url"].toString();
-    this->command_meta_data.uname = map["uname"].toString();
-    this->command_meta_data.password = map["password"].toString();
-    this->command_meta_data.port = map["port"].toInt();
-    this->command_meta_data.path.append(map["startPath"].toString());
+
+    this->commandMetaData->initCommandMetaData();
+
+    this->commandMetaData->setUrl(map["url"].toString());
+    this->commandMetaData->setUname(map["uname"].toString());
+    this->commandMetaData->setPassword(map["password"].toString());
+    this->commandMetaData->setPort(map["port"].toInt());
+
+    this->commandMetaData->appendToListPath(map["startPath"].toString());
+
+    this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
+    this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+    this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+    this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
 
     this->startCommand();
 
@@ -628,22 +635,32 @@ void ApplicationUI::onServerConnTest()
 {
     this->createFtpInstance();
     this->initCommandMetaData();
-    this->command_meta_data.sequenceId = SEQUENCE_VERIFY;
-    /* Enter command meta data */
-    this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_DISCONNECT;
-    this->command_meta_data.url = this->navigationPane->top()->findChild<TextField *>("serverUrl")->text();
-    this->command_meta_data.uname = this->navigationPane->top()->findChild<TextField *>("userName")->text();
-    this->command_meta_data.password = this->navigationPane->top()->findChild<TextField *>("password")->text();
-    this->command_meta_data.port = this->navigationPane->top()->findChild<TextField *>("port")->text().toInt();
 
-    bool res = QObject::connect(this, SIGNAL(verificationFinished()), this, SLOT(serverConnTestFinished()));
+    /* Enter command meta data */
+
+    this->commandMetaData->initCommandMetaData();
+
+    this->commandMetaData->setUrl(this->navigationPane->top()->findChild<TextField *>("serverUrl")->text());
+    this->commandMetaData->setUname(this->navigationPane->top()->findChild<TextField *>("userName")->text());
+    this->commandMetaData->setPassword(this->navigationPane->top()->findChild<TextField *>("password")->text());
+    this->commandMetaData->setPort(this->navigationPane->top()->findChild<TextField *>("port")->text().toInt());
+
+    this->command_meta_data.sequenceId = SEQUENCE_VERIFY;
+    this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+    this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+    this->commandMetaData->addActiontoSequence(ACTION_DISCONNECT);
+
+    bool res = QObject::connect(this, SIGNAL(verificationFinished()), this, SLOT(onServerConnTestFinished()));
     Q_ASSERT(res);
 
     this->startCommand();
 }
 
-void ApplicationUI::serverConnTestFinished()
+void ApplicationUI::onServerConnTestFinished()
 {
+    /* Clean the command meta data object */
+    this->commandMetaData->initCommandMetaData();
+
     if(this->command_meta_data.error)
     {
         qDebug()<<"Verification failed :" << this->command_meta_data.errorString;
@@ -713,15 +730,17 @@ void ApplicationUI::onContentItemTriggered(QVariantList index)
 
     if(item["type"].toString().compare("Directory") == 0)
     {
-        this->command_meta_data.path.append(item["name"].toString());
+        this->commandMetaData->appendToListPath(item["name"].toString());
         this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
         if(this->ftp->state() < QFtp::LoggedIn)
         {
-            this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER;
+            this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+            this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+            this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
         }
         else
         {
-            this->command_meta_data.sequence = ACTION_LIST_FOLDER;
+            this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
         }
 
         this->startCommand();
@@ -732,31 +751,26 @@ void ApplicationUI::onContentItemTriggered(QVariantList index)
 void ApplicationUI::onCustomBackButton()
 {
 
-    if(this->command_meta_data.path.size() > 1)
+    if(!this->commandMetaData->listingRootFolder())
     {
-        this ->command_meta_data.path.removeLast();
+        this ->commandMetaData->removeFromListPath();
         this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
-//        if(this->command_meta_data.path.size() == 1)
-//        {
-//            /* listing for the previous folder */
-//
-//            this->navigationPane->top()->resetPaneProperties();
-//        }
         if(this->ftp->state() < QFtp::LoggedIn)
         {
-            this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_LIST_FOLDER;
+            this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+            this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+            this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
         }
         else
         {
-
-            this->command_meta_data.sequence = ACTION_LIST_FOLDER;
+            this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
         }
         this->startCommand();
     }
     else
     {
         this->command_meta_data.sequenceId = SEQUENCE_CLOSE;
-        this->command_meta_data.sequence = ACTION_DISCONNECT;
+        this->commandMetaData->addActiontoSequence(ACTION_DISCONNECT);
         this->startCommand();
     }
 }
@@ -773,16 +787,17 @@ void ApplicationUI::onItemDownload()
 
     if(map["type"].toString().compare("File") == 0)
     {
-        this->command_meta_data.path.append(map["name"].toString());
+        this->commandMetaData->appendToListPath(map["name"].toString());
         this->command_meta_data.sequenceId = SEQUENCE_DOWNLOAD_FILE;
         if(this->ftp->state() < QFtp::LoggedIn)
         {
-            this->command_meta_data.sequence = ACTION_CONNECT | ACTION_LOGIN | ACTION_DOWNLOAD_FILE;
+            this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+            this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+            this->commandMetaData->addActiontoSequence(ACTION_DOWNLOAD_FILE);
         }
         else
         {
-
-            this->command_meta_data.sequence = ACTION_DOWNLOAD_FILE;
+            this->commandMetaData->addActiontoSequence(ACTION_DOWNLOAD_FILE);
         }
 
         bb::cascades::pickers::FilePicker *filePicker = new bb::cascades::pickers::FilePicker(
@@ -806,17 +821,21 @@ void ApplicationUI::onItemDownload()
 
 void ApplicationUI::onDownloadCanceled()
 {
-    this->command_meta_data.path.removeLast();
+    this->commandMetaData->removeFromListPath();
 }
 
 void ApplicationUI::onDownloaDestSelected(const QStringList& dest)
 {
-    qDebug()<<"Dest count "<<dest.size();
-    qDebug()<<"Dest "<<dest.at(0);
+    if(this->commandMetaData->openDestFile(dest.at(0)))
+    {
+        this->startCommand();
+    }
+    else
+    {
+        /* Error opening file */
+        this->commandMetaData->removeFromListPath();
+    }
 
-    this->command_meta_data.ioDevice = new QFile(dest.at(0));
-    this->command_meta_data.ioDevice->open(QIODevice::WriteOnly);
-    this->startCommand();
 }
 /*****************************************************************************
  *                  FTP methods
@@ -825,12 +844,6 @@ void ApplicationUI::onDownloaDestSelected(const QStringList& dest)
 void ApplicationUI::initCommandMetaData()
 {
     this->command_meta_data.sequenceId = 0;
-    this->command_meta_data.sequence = 0;
-    this->command_meta_data.url.clear();
-    this->command_meta_data.uname.clear();
-    this->command_meta_data.password.clear();
-    this->command_meta_data.port = 0;
-    this->command_meta_data.path.clear();
     this->command_meta_data.error = false;
     this->command_meta_data.errorString.clear();
 }
@@ -866,34 +879,34 @@ void ApplicationUI::createFtpInstance()
 void ApplicationUI::startCommand()
 {
 
-    if(this->command_meta_data.sequence & ACTION_CONNECT)
+    if(this->commandMetaData->isActionSet(ACTION_CONNECT))
     {
-        this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_CONNECT);
-        this->ftp->connectToHost(this->command_meta_data.url, this->command_meta_data.port);
+        this->commandMetaData->removeActionFromSequence(ACTION_CONNECT);
+        this->ftp->connectToHost(this->commandMetaData->getUrl(), this->commandMetaData->getPort());
     }
-    else if(this->command_meta_data.sequence & ACTION_LOGIN)
+    else if(this->commandMetaData->isActionSet(ACTION_LOGIN))
     {
-        this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_LOGIN);
-        this->ftp->login(this->command_meta_data.uname, this->command_meta_data.password);
+        this->commandMetaData->removeActionFromSequence(ACTION_LOGIN);
+        this->ftp->login(this->commandMetaData->getUName(), this->commandMetaData->getPassword());
     }
-    else if(this->command_meta_data.sequence & ACTION_LIST_FOLDER)
+    else if(this->commandMetaData->isActionSet(ACTION_LIST_FOLDER))
     {
-        this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_LIST_FOLDER);
+        this->commandMetaData->removeActionFromSequence(ACTION_LIST_FOLDER);
 
         this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->clear();
 
-        this->ftp->list(this->command_meta_data.path.join("/"));
+        this->ftp->list(this->commandMetaData->getListPath());
     }
-    else if(this->command_meta_data.sequence & ACTION_DOWNLOAD_FILE)
+    else if(this->commandMetaData->isActionSet(ACTION_DOWNLOAD_FILE))
     {
-        this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_DOWNLOAD_FILE);
+        this->commandMetaData->removeActionFromSequence(ACTION_DOWNLOAD_FILE);
 
-        this->ftp->get(this->command_meta_data.path.join("/"),
-                        this->command_meta_data.ioDevice);
+        this->ftp->get(this->commandMetaData->getListPath(),
+                        this->commandMetaData->getIoDevice());
     }
-    else if(this->command_meta_data.sequence & ACTION_DISCONNECT)
+    else if(this->commandMetaData->isActionSet(ACTION_DISCONNECT))
     {
-        this->command_meta_data.sequence = (this->command_meta_data.sequence & ~ACTION_DISCONNECT);
+        this->commandMetaData->removeActionFromSequence(ACTION_DISCONNECT);
         this->ftp->close();
     }
 
@@ -950,13 +963,12 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
 
     if(error)
     {
-        this->command_meta_data.sequence = 0;
 
         this->command_meta_data.error = error;
         this->command_meta_data.errorString = this->ftp->errorString();
     }
 
-    if(this->command_meta_data.sequence)
+    if(!this->commandMetaData->isSequenceEmpty())
     {
 
         this->startCommand();
@@ -982,7 +994,7 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
 
         if(this->command_meta_data.sequenceId == SEQUENCE_DOWNLOAD_FILE)
         {
-            this->command_meta_data.path.removeLast();
+            this->commandMetaData->removeFromListPath();
             this->ftp->currentDevice()->close();
         }
     }
