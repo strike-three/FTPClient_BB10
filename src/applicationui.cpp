@@ -161,6 +161,7 @@ int32_t ApplicationUI::readAccountInfo()
 void ApplicationUI::saveAccountInfo()
 {
     QString filePath = QDir::currentPath() + ACCOUNT_INFO_FILE_PATH;
+    qDebug()<<"Save path" <<filePath;
     QFile accountFile(filePath);
     bb::data::JsonDataAccess data;
     QVariantList accountData;

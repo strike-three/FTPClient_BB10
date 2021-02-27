@@ -40,7 +40,7 @@
 
 using namespace bb::cascades;
 
-#define ACCOUNT_INFO_FILE_PATH      "/app/native/assets/json/accounts.json"
+#define ACCOUNT_INFO_FILE_PATH      "/data/accounts.json"
 #define FTP_PROTOCOL    0
 #define SFTP_PROTOCOL   1
 
