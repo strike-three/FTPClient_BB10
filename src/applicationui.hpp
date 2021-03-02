@@ -30,6 +30,7 @@
 #include <bb/cascades/GroupDataModel>
 #include <bb/cascades/ListView>
 #include <bb/cascades/Label>
+#include <bb/cascades/ContextMenuHandler>
 
 #include <bb/system/InvokeManager>
 #include <bb/system/InvokeRequest>
@@ -94,13 +95,19 @@ private slots:
     void onDataTransferProgress(qint64 done, qint64 total);
     void onDownloaDestSelected(const QStringList&);
     void onDownloadCanceled();
+    void onItemUpload();
+    void onUploadFileSelected(const QStringList&);
+    void onUploadCanceled();
+    void onCardItemUpload();
+    void onCardCancel();
+    void onSelectionContentChanged(QVariantList, bool);
 
 signals:
     void verificationFinished();
     void folderListingFinished();
 
 private:
-void renderServerListPage(bb::cascades::Page*, bool);
+void renderServerListPage(bb::cascades::Page*);
 void renderAddServerPage(bb::cascades::Page*, bool, int);
 void renderContentsPage(bb::cascades::Page*);
 int32_t readAccountInfo();
@@ -118,6 +125,8 @@ Page *rootPage;
 ListView *list;
 Label *label;
 QFtp *ftp;
+bool card;
+QUrl invokeuri;
 bb::system::InvokeManager *invokemanager;
 bb::device::DisplayInfo *displayInfo;
 bb::system::SystemDialog *sysDialog;

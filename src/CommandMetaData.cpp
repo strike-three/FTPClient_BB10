@@ -89,6 +89,11 @@ void CommandMetaData::removeFromListPath()
     }
 }
 
+QString CommandMetaData::getLastFromListPath()
+{
+    return this->listPath.last();
+}
+
 QString CommandMetaData::getListPath()
 {
     return this->listPath.join("/");
@@ -159,12 +164,36 @@ bool CommandMetaData::openDestFile(QString path)
     return this->error;
 }
 
+bool CommandMetaData::openSourceFile(QString  path)
+{
+    this->ioDevice = new QFile(path);
+
+    this->error = this->ioDevice->open(QIODevice::ReadOnly);
+
+    if(!this->error)
+    {
+        this->errorString = this->ioDevice->errorString();
+    }
+
+    return this->error;
+}
+
 QFile *CommandMetaData::getIoDevice()
 {
     return this->ioDevice;
 }
 
-void CommandMetaData::closeDestFile()
+void CommandMetaData::closeIoDevice()
 {
+    this->ioDevice->close();
+}
 
+void CommandMetaData::setFileName(QString fname)
+{
+    this->fileName = fname;
+}
+
+QString CommandMetaData::getFileName()
+{
+    return this->fileName;
 }

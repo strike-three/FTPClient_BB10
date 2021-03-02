@@ -31,11 +31,13 @@
 #include <bb/cascades/DeleteActionItem>
 #include <bb/cascades/ActionSet>
 #include <bb/cascades/Button>
+#include <bb/cascades/TitleBar>
 #include <bb/cascades/StackLayoutProperties>
-
 #include <bb/cascades/NavigationPaneProperties>
 
 #include <bb/data/JsonDataAccess>
+
+#include <bb/system/CardDoneMessage>
 
 #include <bb/cascades/pickers/FilePicker>
 
@@ -93,18 +95,21 @@ ApplicationUI::ApplicationUI() :
         case bb::system::ApplicationStartupMode::InvokeApplication:
             this->rootPage->setObjectName("appLaunchPage");
             this->label->setText("Launch");
-            renderServerListPage(this->rootPage, false);
+            this->card = false;
+            renderServerListPage(this->rootPage);
             break;
 
         case bb::system::ApplicationStartupMode::InvokeCard:
             this->rootPage->setObjectName("cardLaunchPage");
             this->label->setText("Card");
-            renderServerListPage(this->rootPage, true);
+            this->card = true;
+            renderServerListPage(this->rootPage);
             break;
 
         default:
             this->rootPage->setObjectName("appLaunchPage");
-            renderServerListPage(this->rootPage, false);
+            renderServerListPage(this->rootPage);
+            this->card = false;
             break;
     }
 }
@@ -118,9 +123,11 @@ ApplicationUI::~ApplicationUI()
 
 void ApplicationUI::onInvoke(const bb::system::InvokeRequest& data)
 {
-    Q_UNUSED(data);
-    this->rootPage->setObjectName("appLaunchPage");
-    this->navigationPane->push(this->rootPage);
+    qDebug()<<"Invoked";
+    this->invokeuri = data.uri();
+    qDebug()<<data.target();
+//    this->rootPage->setObjectName("appLaunchPage");
+//    this->navigationPane->push(this->rootPage);
 }
 
 /*****************************************************************************
@@ -234,8 +241,9 @@ void ApplicationUI::popFinished(bb::cascades::Page *page)
  *                  Rendering pages
  * ***************************************************************************/
 
-void ApplicationUI::renderServerListPage(bb::cascades::Page *page, bool card)
+void ApplicationUI::renderServerListPage(bb::cascades::Page *page)
 {
+    TitleBar *titlebar = new TitleBar(TitleBarScrollBehavior::Sticky, TitleBarKind::Default);
     ServerListItemFactory *serverListItemFactory = new ServerListItemFactory();
 
     Container *listContainer = new Container();
@@ -257,8 +265,9 @@ void ApplicationUI::renderServerListPage(bb::cascades::Page *page, bool card)
 
     Q_ASSERT(res);
 
-    if(!card)
+    if(!this->card)
     {
+        titlebar->setTitle("Accounts");
         ActionSet *listItemActions = ActionSet::create().title("Actions");
 
         ActionItem *editEntry = ActionItem::create()
@@ -281,6 +290,11 @@ void ApplicationUI::renderServerListPage(bb::cascades::Page *page, bool card)
 
         page->addAction(addServerAction, ActionBarPlacement::OnBar);
     }
+    else
+    {
+        titlebar->setTitle("Select Account");
+    }
+    page->setTitleBar(titlebar);
     page->setContent(listContainer);
     this->navigationPane->push(page);
 }
@@ -494,6 +508,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
 
 void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
 {
+    TitleBar *titlebar = new TitleBar(TitleBarScrollBehavior::Sticky, TitleBarKind::Default);
     ContentListItemFactory *contentListItemFactory = new ContentListItemFactory();
 
     QVariantMap map = this->listViewDataModel.value(this->label->text().toInt()).toMap();
@@ -516,21 +531,45 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
     contentsList->setObjectName("contentsList");
     contentsListContainer->add(contentsList);
 
+
+    ActionSet *contentsListActions = ActionSet::create()
+                                        .title("Actions")
+                                        .objectName("contentsListActions");
+
+    contentsList->addActionSet(contentsListActions);
     bool res = QObject::connect(contentsList, SIGNAL(triggered(QVariantList)),
                                 this, SLOT(onContentItemTriggered(QVariantList)));
 
     Q_ASSERT(res);
 
-    ActionSet *contentsListActions = ActionSet::create().title("Actions");
+    res = QObject::connect(contentsList, SIGNAL(selectionChanged(QVariantList, bool)),
+                        this, SLOT(onSelectionContentChanged(QVariantList, bool)));
 
-    ActionItem *downloadItem = ActionItem::create()
-                                        .title("Download")
-                                        .image(Image("asset:///ic_download.amd"))
-                                        .onTriggered(this, SLOT(onItemDownload()));
+    Q_ASSERT(res);
 
-    contentsListActions->add(downloadItem);
 
-    contentsList->addActionSet(contentsListActions);
+    if(!this->card)
+    {
+        titlebar->setTitle(map["name"].toString());
+        page->setTitleBar(titlebar);
+
+    }
+    else
+    {
+        ActionItem *uploadToFolder = ActionItem::create()
+                                        .title("Upload")
+                                        .onTriggered(this, SLOT(onCardItemUpload()));
+
+        ActionItem *cancelCard = ActionItem::create()
+                                        .title("Close")
+                                        .onTriggered(this, SLOT(onCardCancel()));
+
+        titlebar->setDismissAction(cancelCard);
+        titlebar->setAcceptAction(uploadToFolder);
+        titlebar->setTitle("Select upload folder");
+
+        page->setTitleBar(titlebar);
+    }
 
     /* Set custom back button for the navigation pane */
     ActionItem *customBack = ActionItem::create()
@@ -699,7 +738,6 @@ void ApplicationUI::onListInfo(const QUrlInfo& contentInfo)
     QVariantMap map;
     if(contentInfo.isValid())
     {
-//        qDebug()<<contentInfo.isDir()<<" "<<contentInfo.name();
         if(contentInfo.isDir())
         {
             map["type"] = "Directory";
@@ -707,18 +745,21 @@ void ApplicationUI::onListInfo(const QUrlInfo& contentInfo)
             this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->insert(map);
         }
 
-        if(contentInfo.isExecutable())
+        if(!this->card)
         {
-            map["type"] = "Application";
-            map["name"] = contentInfo.name();
-            this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->insert(map);
-        }
+            if(contentInfo.isExecutable())
+            {
+                map["type"] = "Application";
+                map["name"] = contentInfo.name();
+                this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->insert(map);
+            }
 
-        if(contentInfo.isFile())
-        {
-            map["type"] = "File";
-            map["name"] = contentInfo.name();
-            this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->insert(map);
+            if(contentInfo.isFile())
+            {
+                map["type"] = "File";
+                map["name"] = contentInfo.name();
+                this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->insert(map);
+            }
         }
     }
 
@@ -736,10 +777,12 @@ void ApplicationUI::onContentItemTriggered(QVariantList index)
         {
             this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
             this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
             this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
         }
         else
         {
+            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
             this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
         }
 
@@ -759,10 +802,12 @@ void ApplicationUI::onCustomBackButton()
         {
             this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
             this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
             this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
         }
         else
         {
+            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
             this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
         }
         this->startCommand();
@@ -787,17 +832,21 @@ void ApplicationUI::onItemDownload()
 
     if(map["type"].toString().compare("File") == 0)
     {
-        this->commandMetaData->appendToListPath(map["name"].toString());
+        this->commandMetaData->setFileName(map["name"].toString());
         this->command_meta_data.sequenceId = SEQUENCE_DOWNLOAD_FILE;
         if(this->ftp->state() < QFtp::LoggedIn)
         {
             this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
             this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
             this->commandMetaData->addActiontoSequence(ACTION_DOWNLOAD_FILE);
+//            this->commandMetaData->addActiontoSequence(ACTION_CLOSE_IO_DEV);
         }
         else
         {
+            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
             this->commandMetaData->addActiontoSequence(ACTION_DOWNLOAD_FILE);
+//            this->commandMetaData->addActiontoSequence(ACTION_CLOSE_IO_DEV);
         }
 
         bb::cascades::pickers::FilePicker *filePicker = new bb::cascades::pickers::FilePicker(
@@ -836,6 +885,151 @@ void ApplicationUI::onDownloaDestSelected(const QStringList& dest)
         this->commandMetaData->removeFromListPath();
     }
 
+}
+
+void ApplicationUI::onItemUpload()
+{
+    QVariantList index = this->navigationPane->top()->findChild<ListView *>("contentsList")->selected();
+    QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(index).toMap();
+
+    if(map["type"].toString().compare("Directory") == 0)
+    {
+        this->commandMetaData->appendToListPath(map["name"].toString());
+        this->command_meta_data.sequenceId = SEQUENCE_UPLOAD_FILE;
+        if(this->ftp->state() < QFtp::LoggedIn)
+        {
+            this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+            this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
+            this->commandMetaData->addActiontoSequence(ACTION_UPLOAD_FILE);
+//            this->commandMetaData->addActiontoSequence(ACTION_CLOSE_IO_DEV);
+            this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
+        }
+        else
+        {
+            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
+            this->commandMetaData->addActiontoSequence(ACTION_UPLOAD_FILE);
+//            this->commandMetaData->addActiontoSequence(ACTION_CLOSE_IO_DEV);
+            this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
+        }
+
+
+        bb::cascades::pickers::FilePicker *filePicker = new bb::cascades::pickers::FilePicker();
+        filePicker->setTitle("Select file to upload");
+        filePicker->setMode(bb::cascades::pickers::FilePickerMode::Picker);
+        filePicker->open();
+
+        bool res = QObject::connect(filePicker, SIGNAL(fileSelected(const QStringList&)),
+                                    this, SLOT(onUploadFileSelected(const QStringList&)));
+
+        Q_ASSERT(res);
+
+        res = QObject::connect(filePicker, SIGNAL(canceled()),
+                                this, SLOT(onUploadCanceled()));
+
+        Q_ASSERT(res);
+    }
+    else
+    {
+        qDebug()<<"Cannot upload to file";
+    }
+}
+
+void ApplicationUI::onUploadCanceled()
+{
+    this->commandMetaData->removeFromListPath();
+}
+
+void ApplicationUI::onUploadFileSelected(const QStringList& selectedFile)
+{
+    if(this->commandMetaData->openSourceFile(selectedFile.at(0)))
+    {
+        QFileInfo fname(selectedFile.at(0));
+        this->commandMetaData->setFileName(fname.fileName());
+
+        this->startCommand();
+    }
+    else
+    {
+        qDebug()<<"Error opening source file ";
+    }
+}
+
+void ApplicationUI::onCardCancel()
+{
+    qDebug()<<"Card should close";
+    bb::system::CardDoneMessage message;
+    message.setData("Canceled");
+    message.setDataType("text/plain");
+
+    this->invokemanager->sendCardDone(message);
+}
+
+void ApplicationUI::onCardItemUpload()
+{
+    QFileInfo fileinfo(this->invokeuri.path());
+    this->commandMetaData->setFileName(fileinfo.fileName());
+
+    if(this->commandMetaData->openSourceFile(this->invokeuri.path()))
+    {
+        qDebug()<<"Upload file "<<this->commandMetaData->getFileName();
+        qDebug()<<"shall upload to "<<this->commandMetaData->getLastFromListPath();
+        this->command_meta_data.sequenceId = SEQUENCE_UPLOAD_FILE;
+        if(this->ftp->state() < QFtp::LoggedIn)
+        {
+            this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+            this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
+            this->commandMetaData->addActiontoSequence(ACTION_UPLOAD_FILE);
+        }
+        else
+        {
+            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
+            this->commandMetaData->addActiontoSequence(ACTION_UPLOAD_FILE);
+        }
+        this->startCommand();
+    }
+    else
+    {
+        qDebug()<<"Error opening file";
+    }
+    this->commandMetaData->closeIoDevice();
+}
+
+void ApplicationUI::onSelectionContentChanged(QVariantList index, bool selected)
+{
+    QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(index).toMap();
+    ActionSet *actionset = this->navigationPane->top()->findChild<ActionSet *>("contentsListActions");
+
+    actionset->removeAll();
+
+    ActionItem *downloadItem = ActionItem::create()
+                                        .title("Download")
+                                        .image(Image("asset:///ic_download.amd"))
+                                        .onTriggered(this, SLOT(onItemDownload()));
+
+    ActionItem *uploadItem = ActionItem::create()
+                                .title("Upload")
+                                .onTriggered(this, SLOT(onItemUpload()));
+
+    ActionItem *rename = ActionItem::create()
+                                .title("Rename");
+
+    DeleteActionItem *deleteAction = DeleteActionItem::create()
+                                    .title("Delete");
+
+    if(map["type"].toString().compare("File") == 0)
+    {
+        actionset->add(downloadItem);
+    }
+
+    if(map["type"].toString().compare("Directory") == 0)
+    {
+        actionset->add(uploadItem);
+    }
+
+    actionset->add(rename);
+    actionset->add(deleteAction);
 }
 /*****************************************************************************
  *                  FTP methods
@@ -889,20 +1083,33 @@ void ApplicationUI::startCommand()
         this->commandMetaData->removeActionFromSequence(ACTION_LOGIN);
         this->ftp->login(this->commandMetaData->getUName(), this->commandMetaData->getPassword());
     }
+    else if(this->commandMetaData->isActionSet(ACTION_CD_WORKING_DIR))
+    {
+        this->commandMetaData->removeActionFromSequence(ACTION_CD_WORKING_DIR);
+
+        this->ftp->cd(this->commandMetaData->getListPath());
+    }
+    else if(this->commandMetaData->isActionSet(ACTION_DOWNLOAD_FILE))
+    {
+        this->commandMetaData->removeActionFromSequence(ACTION_DOWNLOAD_FILE);
+
+        this->ftp->get(this->commandMetaData->getFileName(),
+                        this->commandMetaData->getIoDevice());
+    }
+    else if(this->commandMetaData->isActionSet(ACTION_UPLOAD_FILE))
+    {
+        this->commandMetaData->removeActionFromSequence(ACTION_UPLOAD_FILE);
+
+        this->ftp->put(this->commandMetaData->getIoDevice(),
+                        this->commandMetaData->getFileName());
+    }
     else if(this->commandMetaData->isActionSet(ACTION_LIST_FOLDER))
     {
         this->commandMetaData->removeActionFromSequence(ACTION_LIST_FOLDER);
 
         this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->clear();
 
-        this->ftp->list(this->commandMetaData->getListPath());
-    }
-    else if(this->commandMetaData->isActionSet(ACTION_DOWNLOAD_FILE))
-    {
-        this->commandMetaData->removeActionFromSequence(ACTION_DOWNLOAD_FILE);
-
-        this->ftp->get(this->commandMetaData->getListPath(),
-                        this->commandMetaData->getIoDevice());
+        this->ftp->list(".");
     }
     else if(this->commandMetaData->isActionSet(ACTION_DISCONNECT))
     {
@@ -944,8 +1151,16 @@ void ApplicationUI::onFtpCommandStarted(int cmdId)
             this->sysDialog->setBody("Getting folder contents..");
             break;
 
+        case QFtp::Cd:
+            this->sysDialog->setBody("Changing destination dir");
+            break;
+
         case QFtp::Get:
             this->sysDialog->setBody("Downloading..");
+            break;
+
+        case QFtp::Put:
+            this->sysDialog->setBody("Uploading..");
             break;
 
         default:
@@ -959,7 +1174,6 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
 {
     Q_UNUSED(cmdId);
     Q_UNUSED(error);
-//    qDebug()<<"Command finished "<<cmdId<<" error "<< error;
 
     if(error)
     {
@@ -994,8 +1208,21 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
 
         if(this->command_meta_data.sequenceId == SEQUENCE_DOWNLOAD_FILE)
         {
-            this->commandMetaData->removeFromListPath();
-            this->ftp->currentDevice()->close();
+            this->commandMetaData->closeIoDevice();
+        }
+
+        if(this->command_meta_data.sequenceId == SEQUENCE_UPLOAD_FILE)
+        {
+            this->commandMetaData->closeIoDevice();
+
+            if(this->card)
+            {
+                bb::system::CardDoneMessage message;
+                message.setData("Success");
+                message.setDataType("text/plain");
+
+                this->invokemanager->sendCardDone(message);
+            }
         }
     }
 }

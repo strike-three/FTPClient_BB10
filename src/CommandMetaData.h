@@ -18,7 +18,9 @@
 #define ACTION_DISCONNECT           (0x00000004U)
 #define ACTION_LIST_FOLDER          (0x00000010U)
 #define ACTION_DOWNLOAD_FILE        (0x00000020U)
-
+#define ACTION_UPLOAD_FILE          (0x00000040U)
+#define ACTION_CD_WORKING_DIR       (0x00000080U)
+#define ACTION_CLOSE_IO_DEV         (0x00000100U)
 class CommandMetaData
 {
 public:
@@ -51,6 +53,7 @@ public:
 
     void appendToListPath(QString);
     void removeFromListPath();
+    QString getLastFromListPath();
     QString getListPath();
     bool listingRootFolder();
 
@@ -62,9 +65,12 @@ public:
     void setSequenceId(SEQUENCE_ID);
 
     bool openDestFile(QString path);
+    bool openSourceFile(QString  path);
     QFile *getIoDevice();
-    void closeDestFile();
+    void closeIoDevice();
 
+    void setFileName(QString);
+    QString getFileName();
 private:
     /* Specific to the server
      * This values shall be initialised when logging in to the server
@@ -84,7 +90,7 @@ private:
 
     /* Value for the get command */
     QFile *ioDevice;
-
+    QString fileName;
 };
 
 #endif /* COMMANDMETADATA_H_ */
