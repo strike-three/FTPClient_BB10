@@ -21,6 +21,9 @@
 #define ACTION_UPLOAD_FILE          (0x00000040U)
 #define ACTION_CD_WORKING_DIR       (0x00000080U)
 #define ACTION_CLOSE_IO_DEV         (0x00000100U)
+#define ACTION_DELETE_DIR           (0x00000200U)
+#define ACTION_DELETE_FILE          (0x00000400U)
+
 class CommandMetaData
 {
 public:

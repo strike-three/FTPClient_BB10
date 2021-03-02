@@ -30,7 +30,6 @@
 #include <bb/cascades/GroupDataModel>
 #include <bb/cascades/ListView>
 #include <bb/cascades/Label>
-#include <bb/cascades/ContextMenuHandler>
 
 #include <bb/system/InvokeManager>
 #include <bb/system/InvokeRequest>
@@ -101,6 +100,7 @@ private slots:
     void onCardItemUpload();
     void onCardCancel();
     void onSelectionContentChanged(QVariantList, bool);
+    void onContentItemDelete();
 
 signals:
     void verificationFinished();
@@ -127,6 +127,7 @@ Label *label;
 QFtp *ftp;
 bool card;
 QUrl invokeuri;
+QVariantList selectedIndex;
 bb::system::InvokeManager *invokemanager;
 bb::device::DisplayInfo *displayInfo;
 bb::system::SystemDialog *sysDialog;

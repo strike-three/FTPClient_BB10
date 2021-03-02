@@ -827,8 +827,7 @@ void ApplicationUI::onDataTransferProgress(qint64 done, qint64 total)
 
 void ApplicationUI::onItemDownload()
 {
-    QVariantList index = this->navigationPane->top()->findChild<ListView *>("contentsList")->selected();
-    QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(index).toMap();
+    QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(this->selectedIndex).toMap();
 
     if(map["type"].toString().compare("File") == 0)
     {
@@ -889,8 +888,7 @@ void ApplicationUI::onDownloaDestSelected(const QStringList& dest)
 
 void ApplicationUI::onItemUpload()
 {
-    QVariantList index = this->navigationPane->top()->findChild<ListView *>("contentsList")->selected();
-    QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(index).toMap();
+    QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(this->selectedIndex).toMap();
 
     if(map["type"].toString().compare("Directory") == 0)
     {
@@ -998,38 +996,76 @@ void ApplicationUI::onCardItemUpload()
 
 void ApplicationUI::onSelectionContentChanged(QVariantList index, bool selected)
 {
-    QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(index).toMap();
-    ActionSet *actionset = this->navigationPane->top()->findChild<ActionSet *>("contentsListActions");
-
-    actionset->removeAll();
-
-    ActionItem *downloadItem = ActionItem::create()
-                                        .title("Download")
-                                        .image(Image("asset:///ic_download.amd"))
-                                        .onTriggered(this, SLOT(onItemDownload()));
-
-    ActionItem *uploadItem = ActionItem::create()
-                                .title("Upload")
-                                .onTriggered(this, SLOT(onItemUpload()));
-
-    ActionItem *rename = ActionItem::create()
-                                .title("Rename");
-
-    DeleteActionItem *deleteAction = DeleteActionItem::create()
-                                    .title("Delete");
-
-    if(map["type"].toString().compare("File") == 0)
+    if(selected)
     {
-        actionset->add(downloadItem);
+        this->selectedIndex = index;
+
+        QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(index).toMap();
+        ActionSet *actionset = this->navigationPane->top()->findChild<ActionSet *>("contentsListActions");
+
+        actionset->removeAll();
+
+        ActionItem *downloadItem = ActionItem::create()
+                                            .title("Download")
+                                            .image(Image("asset:///ic_download.amd"))
+                                            .onTriggered(this, SLOT(onItemDownload()));
+
+        ActionItem *uploadItem = ActionItem::create()
+                                    .title("Upload")
+                                    .onTriggered(this, SLOT(onItemUpload()));
+
+        ActionItem *rename = ActionItem::create()
+                                    .image(Image("asset:///ic_rename.amd"))
+                                    .title("Rename");
+
+        DeleteActionItem *deleteAction = DeleteActionItem::create()
+                                        .title("Delete")
+                                        .onTriggered(this, SLOT(onContentItemDelete()));
+
+        if((map["type"].toString().compare("File") == 0) ||
+                (map["type"].toString().compare("Application") == 0))
+        {
+            actionset->add(downloadItem);
+        }
+
+        if(map["type"].toString().compare("Directory") == 0)
+        {
+            actionset->add(uploadItem);
+        }
+
+        actionset->setTitle(map["name"].toString());
+        actionset->add(rename);
+        actionset->add(deleteAction);
     }
+}
+
+void ApplicationUI::onContentItemDelete()
+{
+    QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(this->selectedIndex).toMap();
+
+    if(this->ftp->state() < QFtp::LoggedIn)
+    {
+        this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+        this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+    }
+
+    this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
 
     if(map["type"].toString().compare("Directory") == 0)
     {
-        actionset->add(uploadItem);
+        this->commandMetaData->addActiontoSequence(ACTION_DELETE_DIR);
+    }
+    else if((map["type"].toString().compare("File") == 0) ||
+            (map["type"].toString().compare("Application") == 0))
+    {
+        this->commandMetaData->addActiontoSequence(ACTION_DELETE_FILE);
     }
 
-    actionset->add(rename);
-    actionset->add(deleteAction);
+    this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
+
+    this->commandMetaData->setFileName(map["name"].toString());
+
+    this->startCommand();
 }
 /*****************************************************************************
  *                  FTP methods
@@ -1103,6 +1139,18 @@ void ApplicationUI::startCommand()
         this->ftp->put(this->commandMetaData->getIoDevice(),
                         this->commandMetaData->getFileName());
     }
+    else if(this->commandMetaData->isActionSet(ACTION_DELETE_DIR))
+    {
+        this->commandMetaData->removeActionFromSequence(ACTION_DELETE_DIR);
+        this->ftp->rmdir(this->commandMetaData->getFileName());
+
+    }
+    else if(this->commandMetaData->isActionSet(ACTION_DELETE_FILE))
+    {
+        this->commandMetaData->removeActionFromSequence(ACTION_DELETE_FILE);
+        this->ftp->remove(this->commandMetaData->getFileName());
+    }
+
     else if(this->commandMetaData->isActionSet(ACTION_LIST_FOLDER))
     {
         this->commandMetaData->removeActionFromSequence(ACTION_LIST_FOLDER);
