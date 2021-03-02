@@ -549,23 +549,24 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
 
     Q_ASSERT(res);
 
-    ActionItem *uploadItem = ActionItem::create()
-                                .title("Upload")
-                                .onTriggered(this, SLOT(onItemUpload()));
-
     ActionItem *refresh = ActionItem::create()
                                 .title("Refresh")
                                 .image(Image("asset:///ic_reload.amd"))
                                 .onTriggered(this, SLOT(onFolderRefresh()));
 
-    page->addAction(uploadItem, ActionBarPlacement::Signature);
-    page->addAction(refresh, ActionBarPlacement::OnBar);
+
+    page->addAction(refresh, ActionBarPlacement::InOverflow);
 
     if(!this->card)
     {
         titlebar->setTitle(map["name"].toString());
         page->setTitleBar(titlebar);
 
+        ActionItem *uploadItem = ActionItem::create()
+                                    .title("Upload")
+                                    .onTriggered(this, SLOT(onItemUpload()));
+
+        page->addAction(uploadItem, ActionBarPlacement::Signature);
     }
     else
     {
@@ -903,9 +904,6 @@ void ApplicationUI::onItemUpload()
 {
     QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(this->selectedIndex).toMap();
 
-    if(map["type"].toString().compare("Directory") == 0)
-    {
-        this->commandMetaData->appendToListPath(map["name"].toString());
         this->command_meta_data.sequenceId = SEQUENCE_UPLOAD_FILE;
         if(this->ftp->state() < QFtp::LoggedIn)
         {
@@ -913,14 +911,12 @@ void ApplicationUI::onItemUpload()
             this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
             this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
             this->commandMetaData->addActiontoSequence(ACTION_UPLOAD_FILE);
-//            this->commandMetaData->addActiontoSequence(ACTION_CLOSE_IO_DEV);
             this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
         }
         else
         {
             this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
             this->commandMetaData->addActiontoSequence(ACTION_UPLOAD_FILE);
-//            this->commandMetaData->addActiontoSequence(ACTION_CLOSE_IO_DEV);
             this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
         }
 
@@ -939,11 +935,6 @@ void ApplicationUI::onItemUpload()
                                 this, SLOT(onUploadCanceled()));
 
         Q_ASSERT(res);
-    }
-    else
-    {
-        qDebug()<<"Cannot upload to file";
-    }
 }
 
 void ApplicationUI::onUploadCanceled()
