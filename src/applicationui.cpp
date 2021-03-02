@@ -537,6 +537,8 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
                                         .objectName("contentsListActions");
 
     contentsList->addActionSet(contentsListActions);
+
+
     bool res = QObject::connect(contentsList, SIGNAL(triggered(QVariantList)),
                                 this, SLOT(onContentItemTriggered(QVariantList)));
 
@@ -547,6 +549,17 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
 
     Q_ASSERT(res);
 
+    ActionItem *uploadItem = ActionItem::create()
+                                .title("Upload")
+                                .onTriggered(this, SLOT(onItemUpload()));
+
+    ActionItem *refresh = ActionItem::create()
+                                .title("Refresh")
+                                .image(Image("asset:///ic_reload.amd"))
+                                .onTriggered(this, SLOT(onFolderRefresh()));
+
+    page->addAction(uploadItem, ActionBarPlacement::Signature);
+    page->addAction(refresh, ActionBarPlacement::OnBar);
 
     if(!this->card)
     {
@@ -953,6 +966,21 @@ void ApplicationUI::onUploadFileSelected(const QStringList& selectedFile)
     }
 }
 
+void ApplicationUI::onFolderRefresh()
+{
+
+    this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
+    if(this->ftp->state() < QFtp::LoggedIn)
+    {
+        this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+        this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+    }
+
+    this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
+    this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
+    this->startCommand();
+}
+
 void ApplicationUI::onCardCancel()
 {
     qDebug()<<"Card should close";
@@ -1010,10 +1038,6 @@ void ApplicationUI::onSelectionContentChanged(QVariantList index, bool selected)
                                             .image(Image("asset:///ic_download.amd"))
                                             .onTriggered(this, SLOT(onItemDownload()));
 
-        ActionItem *uploadItem = ActionItem::create()
-                                    .title("Upload")
-                                    .onTriggered(this, SLOT(onItemUpload()));
-
         ActionItem *rename = ActionItem::create()
                                     .image(Image("asset:///ic_rename.amd"))
                                     .title("Rename");
@@ -1026,11 +1050,6 @@ void ApplicationUI::onSelectionContentChanged(QVariantList index, bool selected)
                 (map["type"].toString().compare("Application") == 0))
         {
             actionset->add(downloadItem);
-        }
-
-        if(map["type"].toString().compare("Directory") == 0)
-        {
-            actionset->add(uploadItem);
         }
 
         actionset->setTitle(map["name"].toString());

@@ -97,6 +97,7 @@ private slots:
     void onItemUpload();
     void onUploadFileSelected(const QStringList&);
     void onUploadCanceled();
+    void onFolderRefresh();
     void onCardItemUpload();
     void onCardCancel();
     void onSelectionContentChanged(QVariantList, bool);
