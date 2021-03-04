@@ -33,6 +33,8 @@
 
 #include <bb/system/InvokeManager>
 #include <bb/system/InvokeRequest>
+#include <bb/system/SystemPrompt>
+#include <bb/system/SystemUiResult>
 
 #include <bb/device/DisplayInfo>
 
@@ -51,6 +53,10 @@ using namespace bb::cascades;
 #define SEQUENCE_UPLOAD_FILE        11
 #define SEQUENCE_DOWNLOAD_FILE      12
 #define SEQUENCE_CLOSE              20
+#define SEQUENCE_DELETE_FILE        31
+#define SEQUENCE_DELETE_DIR         32
+#define SEQUENCE_RENAME             33
+#define SEQUENCE_MKDIR              34
 
 
 struct command_meta_data_t{
@@ -102,6 +108,10 @@ private slots:
     void onCardCancel();
     void onSelectionContentChanged(QVariantList, bool);
     void onContentItemDelete();
+    void onItemRename();
+    void onRenamePromtFinished(bb::system::SystemUiResult::Type);
+    void onAddFolder();
+    void onAddFolderPromtFinished(bb::system::SystemUiResult::Type);
 
 signals:
     void verificationFinished();
@@ -132,6 +142,8 @@ QVariantList selectedIndex;
 bb::system::InvokeManager *invokemanager;
 bb::device::DisplayInfo *displayInfo;
 bb::system::SystemDialog *sysDialog;
+bb::system::SystemPrompt *renamePromt;
+bb::system::SystemPrompt *addFolderPromt;
 };
 
 #endif /* ApplicationUI_HPP_ */

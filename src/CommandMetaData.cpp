@@ -197,3 +197,13 @@ QString CommandMetaData::getFileName()
 {
     return this->fileName;
 }
+
+void CommandMetaData::setNewFileName(QString fname)
+{
+    this->newFileName = fname;
+}
+
+QString CommandMetaData::getNewFileName()
+{
+    return this->newFileName;
+}

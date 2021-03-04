@@ -23,6 +23,8 @@
 #define ACTION_CLOSE_IO_DEV         (0x00000100U)
 #define ACTION_DELETE_DIR           (0x00000200U)
 #define ACTION_DELETE_FILE          (0x00000400U)
+#define ACTION_RENAME               (0x00000800U)
+#define ACTION_MKDIR                (0x00001000U)
 
 class CommandMetaData
 {
@@ -74,6 +76,10 @@ public:
 
     void setFileName(QString);
     QString getFileName();
+
+    void setNewFileName(QString);
+    QString getNewFileName();
+
 private:
     /* Specific to the server
      * This values shall be initialised when logging in to the server
@@ -94,6 +100,9 @@ private:
     /* Value for the get command */
     QFile *ioDevice;
     QString fileName;
+
+    /* Rename */
+    QString newFileName;
 };
 
 #endif /* COMMANDMETADATA_H_ */

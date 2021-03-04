@@ -549,13 +549,6 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
 
     Q_ASSERT(res);
 
-    ActionItem *refresh = ActionItem::create()
-                                .title("Refresh")
-                                .image(Image("asset:///ic_reload.amd"))
-                                .onTriggered(this, SLOT(onFolderRefresh()));
-
-
-    page->addAction(refresh, ActionBarPlacement::InOverflow);
 
     if(!this->card)
     {
@@ -567,6 +560,22 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
                                     .onTriggered(this, SLOT(onItemUpload()));
 
         page->addAction(uploadItem, ActionBarPlacement::Signature);
+
+        ActionItem *mkdir = ActionItem::create()
+                                .title("Create folder")
+                                .image(Image("asset:///ic_add_folder.amd"))
+                                .onTriggered(this, SLOT(onAddFolder()));
+
+        page->addAction(mkdir, ActionBarPlacement::OnBar);
+
+        ActionItem *refresh = ActionItem::create()
+                                    .title("Refresh")
+                                    .image(Image("asset:///ic_reload.amd"))
+                                    .onTriggered(this, SLOT(onFolderRefresh()));
+
+
+        page->addAction(refresh, ActionBarPlacement::OnBar);
+
     }
     else
     {
@@ -752,7 +761,7 @@ void ApplicationUI::onListInfo(const QUrlInfo& contentInfo)
     QVariantMap map;
     if(contentInfo.isValid())
     {
-        if(contentInfo.isDir())
+        if(contentInfo.isDir() && !(map["name"].toString().compare("..") == 0))
         {
             map["type"] = "Directory";
             map["name"] = contentInfo.name();
@@ -1031,7 +1040,8 @@ void ApplicationUI::onSelectionContentChanged(QVariantList index, bool selected)
 
         ActionItem *rename = ActionItem::create()
                                     .image(Image("asset:///ic_rename.amd"))
-                                    .title("Rename");
+                                    .title("Rename")
+                                    .onTriggered(this, SLOT(onItemRename()));
 
         DeleteActionItem *deleteAction = DeleteActionItem::create()
                                         .title("Delete")
@@ -1041,10 +1051,10 @@ void ApplicationUI::onSelectionContentChanged(QVariantList index, bool selected)
                 (map["type"].toString().compare("Application") == 0))
         {
             actionset->add(downloadItem);
+            actionset->add(rename);
         }
 
         actionset->setTitle(map["name"].toString());
-        actionset->add(rename);
         actionset->add(deleteAction);
     }
 }
@@ -1063,11 +1073,13 @@ void ApplicationUI::onContentItemDelete()
 
     if(map["type"].toString().compare("Directory") == 0)
     {
+        this->command_meta_data.sequenceId = SEQUENCE_DELETE_DIR;
         this->commandMetaData->addActiontoSequence(ACTION_DELETE_DIR);
     }
     else if((map["type"].toString().compare("File") == 0) ||
             (map["type"].toString().compare("Application") == 0))
     {
+        this->command_meta_data.sequenceId = SEQUENCE_DELETE_FILE;
         this->commandMetaData->addActiontoSequence(ACTION_DELETE_FILE);
     }
 
@@ -1077,6 +1089,87 @@ void ApplicationUI::onContentItemDelete()
 
     this->startCommand();
 }
+
+void ApplicationUI::onItemRename()
+{
+    QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(this->selectedIndex).toMap();
+    renamePromt = new bb::system::SystemPrompt();
+    renamePromt->setTitle("Rename file");
+    renamePromt->setBody("Enter new file name");
+    renamePromt->setDismissAutomatically(true);
+
+    bool res = QObject::connect(renamePromt, SIGNAL(finished(bb::system::SystemUiResult::Type)),
+                        this, SLOT(onRenamePromtFinished(bb::system::SystemUiResult::Type)));
+
+    Q_ASSERT(res);
+
+    if(res)
+    {
+        renamePromt->show();
+    }
+}
+
+void ApplicationUI::onRenamePromtFinished(bb::system::SystemUiResult::Type renameResult)
+{
+    QVariantMap map = this->navigationPane->top()->findChild<GroupDataModel *>("contentsData")->data(this->selectedIndex).toMap();
+    if(renameResult == bb::system::SystemUiResult::ConfirmButtonSelection)
+    {
+        this->commandMetaData->setFileName(map["name"].toString());
+        this->command_meta_data.sequenceId = SEQUENCE_RENAME;
+
+        if(this->ftp->state() < QFtp::LoggedIn)
+        {
+            this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+            this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+        }
+
+        this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
+        this->commandMetaData->addActiontoSequence(ACTION_RENAME);
+        this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
+
+        this->commandMetaData->setNewFileName(this->renamePromt->inputFieldTextEntry());
+        this->startCommand();
+    }
+}
+
+void ApplicationUI::onAddFolder()
+{
+    addFolderPromt = new bb::system::SystemPrompt();
+    addFolderPromt->setTitle("Create folder");
+    addFolderPromt->setBody("Enter folder name");
+    addFolderPromt->setDismissAutomatically(true);
+
+    bool res = QObject::connect(addFolderPromt, SIGNAL(finished(bb::system::SystemUiResult::Type)),
+                        this, SLOT(onAddFolderPromtFinished(bb::system::SystemUiResult::Type)));
+
+    Q_ASSERT(res);
+
+    if(res)
+    {
+        addFolderPromt->show();
+    }
+}
+
+void ApplicationUI::onAddFolderPromtFinished(bb::system::SystemUiResult::Type addFolderResult)
+{
+    if(addFolderResult == bb::system::SystemUiResult::ConfirmButtonSelection)
+    {
+        this->commandMetaData->setNewFileName(this->addFolderPromt->inputFieldTextEntry());
+        this->command_meta_data.sequenceId = SEQUENCE_MKDIR;
+
+        if(this->ftp->state() < QFtp::LoggedIn)
+        {
+            this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+            this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+        }
+
+        this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
+        this->commandMetaData->addActiontoSequence(ACTION_MKDIR);
+        this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
+        this->startCommand();
+    }
+}
+
 /*****************************************************************************
  *                  FTP methods
  * ***************************************************************************/
@@ -1160,7 +1253,17 @@ void ApplicationUI::startCommand()
         this->commandMetaData->removeActionFromSequence(ACTION_DELETE_FILE);
         this->ftp->remove(this->commandMetaData->getFileName());
     }
-
+    else if(this->commandMetaData->isActionSet(ACTION_RENAME))
+    {
+        this->commandMetaData->removeActionFromSequence(ACTION_RENAME);
+        this->ftp->rename(this->commandMetaData->getFileName(),
+                this->commandMetaData->getNewFileName());
+    }
+    else if(this->commandMetaData->isActionSet(ACTION_MKDIR))
+    {
+        this->commandMetaData->removeActionFromSequence(ACTION_MKDIR);
+        this->ftp->mkdir(this->commandMetaData->getNewFileName());
+    }
     else if(this->commandMetaData->isActionSet(ACTION_LIST_FOLDER))
     {
         this->commandMetaData->removeActionFromSequence(ACTION_LIST_FOLDER);
