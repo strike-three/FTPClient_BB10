@@ -557,6 +557,7 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
 
         ActionItem *uploadItem = ActionItem::create()
                                     .title("Upload")
+                                    .image(Image("asset:///ic_upload.amd"))
                                     .onTriggered(this, SLOT(onItemUpload()));
 
         page->addAction(uploadItem, ActionBarPlacement::Signature);

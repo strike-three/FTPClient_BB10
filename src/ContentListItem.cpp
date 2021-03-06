@@ -12,6 +12,7 @@
 #include <bb/cascades/DockLayout>
 #include <bb/cascades/StackLayout>
 #include <bb/cascades/StackLayoutProperties>
+#include <bb/cascades/UIPalette>
 
 using namespace bb::cascades;
 
@@ -33,7 +34,7 @@ ContentListItem::ContentListItem()
                             .scalingMethod(ScalingMethod::AspectFit)
                             .horizontal(HorizontalAlignment::Fill)
                             .vertical(VerticalAlignment::Fill)
-                            .filterColor(Color::fromARGB(0xFFF09011));
+                            .filterColor(contentIcon->ui()->palette()->primary());
     entryTypeContainer->add(contentIcon);
 
     Container *entryNameContainer = Container::create()
@@ -64,7 +65,7 @@ void ContentListItem::updateListItem(const QVariant &data)
     }
     else
     {
-        this->contentIcon->setImage("asset:///ic_entry.amd");
+        this->contentIcon->setImage("asset:///ic_folder.amd");
     }
     this->contentName->setText(map["name"].toString());
 }

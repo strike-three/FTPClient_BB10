@@ -25,8 +25,8 @@ ServerListItem::ServerListItem()
     serverItemContainer->setVerticalAlignment(VerticalAlignment::Fill);
     serverItemContainer->setLayout(StackLayout::create().
                                     orientation(LayoutOrientation::LeftToRight));
-    serverItemContainer->setBackground(
-            ImagePaint(QUrl("asset:///listBackground.png"), RepeatPattern::Fill));
+//    serverItemContainer->setBackground(
+//            ImagePaint(QUrl("asset:///listBackground.png"), RepeatPattern::Fill));
 
     ui = serverItemContainer->ui();
 
