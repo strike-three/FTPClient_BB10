@@ -237,7 +237,7 @@ void ApplicationUI::popFinished(bb::cascades::Page *page)
     {
         qDebug()<<"Remove page "<<page->objectName();
         this->initCommandMetaData();
-//        page->deleteLater();
+        page->deleteLater();
     }
     this->label->setText("Pop finished");
 }
