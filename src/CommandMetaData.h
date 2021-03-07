@@ -64,6 +64,7 @@ public:
 
     void addActiontoSequence(uint32_t);
     void removeActionFromSequence(uint32_t);
+    void emptySequence();
     bool isActionSet(uint32_t);
     bool isSequenceEmpty();
 

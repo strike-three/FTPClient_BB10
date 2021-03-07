@@ -38,6 +38,7 @@
 #include <bb/data/JsonDataAccess>
 
 #include <bb/system/CardDoneMessage>
+#include <bb/system/SystemToast>
 
 #include <bb/cascades/pickers/FilePicker>
 
@@ -83,6 +84,10 @@ ApplicationUI::ApplicationUI() :
                             SIGNAL(popTransitionEnded(bb::cascades::Page*)),
                             this,
                             SLOT(popFinished(bb::cascades::Page*)));
+    Q_ASSERT(res);
+
+    res = QObject::connect(this, SIGNAL(verificationFinished()),
+                            this, SLOT(onServerConnTestFinished()));
     Q_ASSERT(res);
 
     /* Read the accounts information and populate the listdatamodel*/
@@ -736,9 +741,6 @@ void ApplicationUI::onServerConnTest()
     this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
     this->commandMetaData->addActiontoSequence(ACTION_DISCONNECT);
 
-    bool res = QObject::connect(this, SIGNAL(verificationFinished()), this, SLOT(onServerConnTestFinished()));
-    Q_ASSERT(res);
-
     this->startCommand();
 }
 
@@ -747,12 +749,19 @@ void ApplicationUI::onServerConnTestFinished()
     /* Clean the command meta data object */
     this->commandMetaData->initCommandMetaData();
 
+    bb::system::SystemToast *serverVerificationResult = new bb::system::SystemToast();
+
     if(this->command_meta_data.error)
     {
+        serverVerificationResult->setBody(this->ftp->errorString());
+        serverVerificationResult->show();
+        this->ftp->abort();
         qDebug()<<"Verification failed :" << this->command_meta_data.errorString;
     }
     else
     {
+        serverVerificationResult->setBody("Success");
+        serverVerificationResult->show();
         qDebug()<<"Verification success";
     }
 }
@@ -1324,11 +1333,8 @@ void ApplicationUI::startCommand()
 
 void ApplicationUI::onFtpStateChanged(int state)
 {
-    Q_UNUSED(state);
-    if(this->navigationPane->top()->objectName().compare("serverEntryEditPage") == 0)
-    {
-//        qDebug()<<"State "<<state;
-    }
+//    Q_UNUSED(state);
+        qDebug()<<"State "<<state;
 }
 
 void ApplicationUI::onFtpCommandStarted(int cmdId)
@@ -1379,14 +1385,15 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
 
     if(error)
     {
-
+        qDebug()<<"Error occured "<<this->ftp->error()<<this->ftp->errorString();
         this->command_meta_data.error = error;
         this->command_meta_data.errorString = this->ftp->errorString();
+        this->commandMetaData->emptySequence();
     }
 
     if(!this->commandMetaData->isSequenceEmpty())
     {
-
+        qDebug()<<"Starting command ";
         this->startCommand();
     }
     else
@@ -1395,6 +1402,7 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
 
         if(this->command_meta_data.sequenceId == SEQUENCE_VERIFY)
         {
+            qDebug()<<"Emit verificationFinished";
             emit this->verificationFinished();
         }
 

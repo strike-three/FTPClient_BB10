@@ -121,6 +121,11 @@ void CommandMetaData::removeActionFromSequence(uint32_t action)
     this->sequence &= ~action;
 }
 
+void CommandMetaData::emptySequence()
+{
+    this->sequence = 0;
+}
+
 bool CommandMetaData::isActionSet(uint32_t action)
 {
     if(this->sequence & action)
