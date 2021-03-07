@@ -329,6 +329,10 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     serverName->input()->setSubmitKey(SubmitKey::Next);
     serverName->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
+    bool res = QObject::connect(serverName, SIGNAL(textChanged(QString)), this, SLOT(onServerPageTextChanged(QString)));
+
+    Q_ASSERT(res);
+
     addServerContainer->add(serverName);
     addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
 
@@ -343,18 +347,28 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                            .hintText("URL")
                            .bottomMargin(ui->du(1))
                            .backgroundVisible(true)
-                           .clearButtonVisible(true);
+                           .clearButtonVisible(true)
+                           .inputMode(TextFieldInputMode::Url);
     serverUrl->input()->setSubmitKey(SubmitKey::Next);
     serverUrl->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
+
+    res = QObject::connect(serverUrl, SIGNAL(textChanged(QString)), this, SLOT(onServerPageTextChanged(QString)));
+
+    Q_ASSERT(res);
 
     TextField *userName = TextField::create()
                            .objectName("userName")
                            .hintText("User name")
                            .bottomMargin(ui->du(1))
                            .backgroundVisible(true)
-                           .clearButtonVisible(true);
+                           .clearButtonVisible(true)
+                           .inputMode(TextFieldInputMode::EmailAddress);
     userName->input()->setSubmitKey(SubmitKey::Next);
     userName->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
+
+    res = QObject::connect(userName, SIGNAL(textChanged(QString)), this, SLOT(onServerPageTextChanged(QString)));
+
+    Q_ASSERT(res);
 
     TextField *password = TextField::create()
                            .objectName("password")
@@ -383,13 +397,14 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                                .title("Protocol")
                                .bottomMargin(ui->du(2));
     protocol->add(Option::create().text("FTP"));
-    protocol->add(Option::create().text("SFTP"));
+//    protocol->add(Option::create().text("SFTP"));
     protocol->setSelectedIndex(0);
 
-    bool res = QObject::connect(protocol, SIGNAL(selectedIndexChanged(int)),
+    res = QObject::connect(protocol, SIGNAL(selectedIndexChanged(int)),
                                 this, SLOT(onProtocolSelected(int)));
 
     Q_ASSERT(res);
+
 
     addServerContainer->add(protocolLabel);
     addServerContainer->add(protocol);
@@ -412,6 +427,10 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     port->input()->setSubmitKey(SubmitKey::Next);
     port->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
 
+    res = QObject::connect(port, SIGNAL(textChanged(QString)), this, SLOT(onServerPageTextChanged(QString)));
+
+    Q_ASSERT(res);
+
     addServerContainer->add(protocolPort);
     addServerContainer->add(port);
 
@@ -432,6 +451,10 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                            .inputMode(TextFieldInputMode::Default);
     startPathText->input()->setSubmitKey(SubmitKey::Done);
     startPathText->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Lose);
+
+    res = QObject::connect(startPathText, SIGNAL(textChanged(QString)), this, SLOT(onServerPageTextChanged(QString)));
+
+    Q_ASSERT(res);
 
     addServerContainer->add(startPath);
     addServerContainer->add(startPathText);
@@ -1170,6 +1193,23 @@ void ApplicationUI::onAddFolderPromtFinished(bb::system::SystemUiResult::Type ad
         this->startCommand();
     }
 }
+
+void ApplicationUI::onServerPageTextChanged(QString text)
+{
+    Q_UNUSED(text);
+    QString curr_text = this->navigationPane->top()->findChild<TextField *>("serverName")->text();
+    this->navigationPane->top()->findChild<TextField *>("serverName")->setText(curr_text.trimmed());
+
+    curr_text = this->navigationPane->top()->findChild<TextField *>("serverUrl")->text();
+    this->navigationPane->top()->findChild<TextField *>("serverUrl")->setText(curr_text.trimmed());
+
+    curr_text = this->navigationPane->top()->findChild<TextField *>("userName")->text();
+    this->navigationPane->top()->findChild<TextField *>("userName")->setText(curr_text.trimmed());
+
+    curr_text = this->navigationPane->top()->findChild<TextField *>("port")->text();
+    this->navigationPane->top()->findChild<TextField *>("port")->setText(curr_text.trimmed());
+}
+
 
 /*****************************************************************************
  *                  FTP methods

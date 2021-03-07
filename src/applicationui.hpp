@@ -112,7 +112,7 @@ private slots:
     void onRenamePromtFinished(bb::system::SystemUiResult::Type);
     void onAddFolder();
     void onAddFolderPromtFinished(bb::system::SystemUiResult::Type);
-
+    void onServerPageTextChanged(QString);
 signals:
     void verificationFinished();
     void folderListingFinished();
