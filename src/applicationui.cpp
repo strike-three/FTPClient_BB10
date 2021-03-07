@@ -56,7 +56,7 @@ ApplicationUI::ApplicationUI() :
 
     this->displayInfo = new bb::device::DisplayInfo();
     this->invokemanager = new bb::system::InvokeManager();
-    this->sysDialog = new bb::system::SystemDialog(NULL, "Cancel");
+    this->sysDialog = new bb::system::SystemDialog(NULL, "Hide");
     this->sysDialog->setActivityIndicatorVisible(true);
     this->sysDialog->setButtonAreaLimit(1);
 
@@ -651,6 +651,7 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
     this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
     this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
     this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+    this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
     this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
 
     this->startCommand();
@@ -741,6 +742,8 @@ void ApplicationUI::onServerConnTest()
     this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
     this->commandMetaData->addActiontoSequence(ACTION_DISCONNECT);
 
+    this->navigationPane->at(1)->findChild<Button *>("testButton")->setEnabled(false);
+
     this->startCommand();
 }
 
@@ -766,6 +769,28 @@ void ApplicationUI::onServerConnTestFinished()
     }
 }
 
+void ApplicationUI::onServerPageTextChanged(QString text)
+{
+    Q_UNUSED(text);
+    QString curr_text = this->navigationPane->top()->findChild<TextField *>("serverName")->text();
+    this->navigationPane->top()->findChild<TextField *>("serverName")->setText(curr_text.trimmed());
+
+    curr_text = this->navigationPane->top()->findChild<TextField *>("serverUrl")->text();
+    this->navigationPane->top()->findChild<TextField *>("serverUrl")->setText(curr_text.trimmed());
+
+    curr_text = this->navigationPane->top()->findChild<TextField *>("userName")->text();
+    this->navigationPane->top()->findChild<TextField *>("userName")->setText(curr_text.trimmed());
+
+    curr_text = this->navigationPane->top()->findChild<TextField *>("port")->text();
+    this->navigationPane->top()->findChild<TextField *>("port")->setText(curr_text.trimmed());
+
+    curr_text = this->navigationPane->top()->findChild<TextField *>("startPathText")->text();
+    this->navigationPane->top()->findChild<TextField *>("startPathText")->setText(curr_text.trimmed());
+
+    this->navigationPane->at(1)->findChild<Button *>("saveButton")->setEnabled(true);
+    this->navigationPane->at(1)->findChild<Button *>("testButton")->setEnabled(true);
+}
+
 void ApplicationUI::onServerTriggered(QVariantList index)
 {
     Page *listContentsPage = Page::create()
@@ -785,7 +810,8 @@ void ApplicationUI::onProtocolSelected(int index)
     {
         this->navigationPane->top()->findChild<TextField *>("port")->setText("452");
     }
-
+    this->navigationPane->at(1)->findChild<Button *>("saveButton")->setEnabled(true);
+    this->navigationPane->at(1)->findChild<Button *>("testButton")->setEnabled(true);
 }
 
 void ApplicationUI::onListInfo(const QUrlInfo& contentInfo)
@@ -794,7 +820,7 @@ void ApplicationUI::onListInfo(const QUrlInfo& contentInfo)
     QVariantMap map;
     if(contentInfo.isValid())
     {
-        if(contentInfo.isDir() && !(map["name"].toString().compare("..") == 0))
+        if(contentInfo.isDir() && !(contentInfo.name().compare("..") == 0))
         {
             map["type"] = "Directory";
             map["name"] = contentInfo.name();
@@ -895,13 +921,11 @@ void ApplicationUI::onItemDownload()
             this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
             this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
             this->commandMetaData->addActiontoSequence(ACTION_DOWNLOAD_FILE);
-//            this->commandMetaData->addActiontoSequence(ACTION_CLOSE_IO_DEV);
         }
         else
         {
             this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
             this->commandMetaData->addActiontoSequence(ACTION_DOWNLOAD_FILE);
-//            this->commandMetaData->addActiontoSequence(ACTION_CLOSE_IO_DEV);
         }
 
         bb::cascades::pickers::FilePicker *filePicker = new bb::cascades::pickers::FilePicker(
@@ -1202,23 +1226,6 @@ void ApplicationUI::onAddFolderPromtFinished(bb::system::SystemUiResult::Type ad
         this->startCommand();
     }
 }
-
-void ApplicationUI::onServerPageTextChanged(QString text)
-{
-    Q_UNUSED(text);
-    QString curr_text = this->navigationPane->top()->findChild<TextField *>("serverName")->text();
-    this->navigationPane->top()->findChild<TextField *>("serverName")->setText(curr_text.trimmed());
-
-    curr_text = this->navigationPane->top()->findChild<TextField *>("serverUrl")->text();
-    this->navigationPane->top()->findChild<TextField *>("serverUrl")->setText(curr_text.trimmed());
-
-    curr_text = this->navigationPane->top()->findChild<TextField *>("userName")->text();
-    this->navigationPane->top()->findChild<TextField *>("userName")->setText(curr_text.trimmed());
-
-    curr_text = this->navigationPane->top()->findChild<TextField *>("port")->text();
-    this->navigationPane->top()->findChild<TextField *>("port")->setText(curr_text.trimmed());
-}
-
 
 /*****************************************************************************
  *                  FTP methods
