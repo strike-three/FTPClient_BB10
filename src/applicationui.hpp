@@ -112,7 +112,7 @@ private slots:
     void onContentItemDelete();
     void onItemRename();
     void onRenamePromtFinished(bb::system::SystemUiResult::Type);
-    void onSysDialogFinished(bb::system::SystemUiResult::Type);
+    void onSysProgressDialogFinished(bb::system::SystemUiResult::Type);
     void onAddFolder();
     void onAddFolderPromtFinished(bb::system::SystemUiResult::Type);
     void onServerPageTextChanged(QString);

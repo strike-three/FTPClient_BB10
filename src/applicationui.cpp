@@ -55,7 +55,7 @@ ApplicationUI::ApplicationUI() :
 
     this->displayInfo = new bb::device::DisplayInfo();
     this->invokemanager = new bb::system::InvokeManager();
-    this->sysDialog = new bb::system::SystemDialog(NULL, "Cancel");
+    this->sysDialog = new bb::system::SystemDialog(NULL, "Hide");
     this->sysDialog->setActivityIndicatorVisible(true);
     this->sysDialog->setButtonAreaLimit(1);
 
@@ -92,8 +92,8 @@ ApplicationUI::ApplicationUI() :
                             this, SLOT(onServerConnTestFinished()));
     Q_ASSERT(res);
 
-    res = QObject::connect(sysDialog, SIGNAL(finished(bb::system::SystemUiResult::Type)),
-                        this, SLOT(onSysDialogFinished(bb::system::SystemUiResult::Type)));
+    res = QObject::connect(this->sysProgressDialog, SIGNAL(finished(bb::system::SystemUiResult::Type)),
+                        this, SLOT(onSysProgressDialogFinished(bb::system::SystemUiResult::Type)));
 
     Q_ASSERT(res);
 
@@ -927,7 +927,15 @@ void ApplicationUI::onCustomBackButton()
 
 void ApplicationUI::onDataTransferProgress(qint64 done, qint64 total)
 {
-    int progress = (done * 100 / total);
+    int progress;
+    if(total > 0)
+    {
+        progress = (done * 100 / total);
+    }
+    else
+    {
+        progress = 100;
+    }
     qDebug()<<"Progress "<<progress;
     this->sysProgressDialog->setProgress(progress);
 }
@@ -1214,11 +1222,23 @@ void ApplicationUI::onRenamePromtFinished(bb::system::SystemUiResult::Type renam
     }
 }
 
-void ApplicationUI::onSysDialogFinished(bb::system::SystemUiResult::Type result)
+void ApplicationUI::onSysProgressDialogFinished(bb::system::SystemUiResult::Type result)
 {
     Q_UNUSED(result);
     qDebug()<<"****** Abort ******"<<this->ftp->currentCommand();
-    this->ftp->rawCommand("ABOR");
+    this->ftp->abort();
+    this->commandMetaData->closeIoDevice();
+
+    if(this->ftp->currentCommand() == QFtp::Put)
+    {
+        this->commandMetaData->emptySequence();
+    }
+    else
+    {
+        /* Get command, close ftp connection as the server might not respond */
+        this->navigationPane->pop();
+    }
+
 }
 
 void ApplicationUI::onAddFolder()
