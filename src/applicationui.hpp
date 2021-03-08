@@ -35,6 +35,7 @@
 #include <bb/system/InvokeRequest>
 #include <bb/system/SystemPrompt>
 #include <bb/system/SystemUiResult>
+#include <bb/system/SystemToast>
 
 #include <bb/device/DisplayInfo>
 
@@ -110,6 +111,7 @@ private slots:
     void onContentItemDelete();
     void onItemRename();
     void onRenamePromtFinished(bb::system::SystemUiResult::Type);
+    void onSysDialogFinished(bb::system::SystemUiResult::Type);
     void onAddFolder();
     void onAddFolderPromtFinished(bb::system::SystemUiResult::Type);
     void onServerPageTextChanged(QString);
@@ -144,6 +146,7 @@ bb::device::DisplayInfo *displayInfo;
 bb::system::SystemDialog *sysDialog;
 bb::system::SystemPrompt *renamePromt;
 bb::system::SystemPrompt *addFolderPromt;
+bb::system::SystemToast *sysToast;
 };
 
 #endif /* ApplicationUI_HPP_ */

@@ -38,7 +38,6 @@
 #include <bb/data/JsonDataAccess>
 
 #include <bb/system/CardDoneMessage>
-#include <bb/system/SystemToast>
 
 #include <bb/cascades/pickers/FilePicker>
 
@@ -59,6 +58,8 @@ ApplicationUI::ApplicationUI() :
     this->sysDialog = new bb::system::SystemDialog(NULL, "Hide");
     this->sysDialog->setActivityIndicatorVisible(true);
     this->sysDialog->setButtonAreaLimit(1);
+
+    this->sysToast = new bb::system::SystemToast();
 
     this->ftp = new QFtp();
 
@@ -88,6 +89,11 @@ ApplicationUI::ApplicationUI() :
 
     res = QObject::connect(this, SIGNAL(verificationFinished()),
                             this, SLOT(onServerConnTestFinished()));
+    Q_ASSERT(res);
+
+    res = QObject::connect(sysDialog, SIGNAL(finished(bb::system::SystemUiResult::Type)),
+                        this, SLOT(onSysDialogFinished(bb::system::SystemUiResult::Type)));
+
     Q_ASSERT(res);
 
     /* Read the accounts information and populate the listdatamodel*/
@@ -752,19 +758,16 @@ void ApplicationUI::onServerConnTestFinished()
     /* Clean the command meta data object */
     this->commandMetaData->initCommandMetaData();
 
-    bb::system::SystemToast *serverVerificationResult = new bb::system::SystemToast();
-
     if(this->command_meta_data.error)
     {
-        serverVerificationResult->setBody(this->ftp->errorString());
-        serverVerificationResult->show();
-        this->ftp->abort();
+        this->sysToast->setBody(this->ftp->errorString());
+        this->sysToast->show();
         qDebug()<<"Verification failed :" << this->command_meta_data.errorString;
     }
     else
     {
-        serverVerificationResult->setBody("Success");
-        serverVerificationResult->show();
+        this->sysToast->setBody("Success");
+        this->sysToast->show();
         qDebug()<<"Verification success";
     }
 }
@@ -1187,6 +1190,12 @@ void ApplicationUI::onRenamePromtFinished(bb::system::SystemUiResult::Type renam
         this->commandMetaData->setNewFileName(this->renamePromt->inputFieldTextEntry());
         this->startCommand();
     }
+}
+
+void ApplicationUI::onSysDialogFinished(bb::system::SystemUiResult::Type result)
+{
+    qDebug()<<"****** Abort ******";
+    this->ftp->rawCommand("ABOR");
 }
 
 void ApplicationUI::onAddFolder()
