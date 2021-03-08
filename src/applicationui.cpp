@@ -59,6 +59,9 @@ ApplicationUI::ApplicationUI() :
     this->sysDialog->setActivityIndicatorVisible(true);
     this->sysDialog->setButtonAreaLimit(1);
 
+    this->sysProgressDialog = new bb::system::SystemProgressDialog("Cancel");
+    this->sysProgressDialog->setAutoUpdateEnabled(true);
+
     this->sysToast = new bb::system::SystemToast();
 
     this->list = 0;
@@ -924,7 +927,9 @@ void ApplicationUI::onCustomBackButton()
 
 void ApplicationUI::onDataTransferProgress(qint64 done, qint64 total)
 {
-//    qDebug()<<"Transfered "<<done<<" of "<<total;
+    int progress = (done * 100 / total);
+    qDebug()<<"Progress "<<progress;
+    this->sysProgressDialog->setProgress(progress);
 }
 
 void ApplicationUI::onItemDownload()
@@ -1383,6 +1388,8 @@ void ApplicationUI::onFtpCommandStarted(int cmdId)
 {
     Q_UNUSED(cmdId);
     qDebug()<<"Command " << this->ftp->currentCommand();
+    bool toggleSysDialog = false;
+
     switch(this->ftp->currentCommand())
     {
         case QFtp::ConnectToHost:
@@ -1406,18 +1413,30 @@ void ApplicationUI::onFtpCommandStarted(int cmdId)
             break;
 
         case QFtp::Get:
-            this->sysDialog->setBody("Downloading..");
+            this->sysProgressDialog->setBody("Downloading..");
+            toggleSysDialog = true;
             break;
 
         case QFtp::Put:
-            this->sysDialog->setBody("Uploading..");
+            this->sysProgressDialog->setBody("Uploading..");
+            toggleSysDialog = true;
             break;
 
         default:
             this->sysDialog->setBody("Unknown command");
             break;
     }
-    this->sysDialog->show();
+
+    if(toggleSysDialog)
+    {
+        this->sysDialog->cancel();
+        this->sysProgressDialog->show();
+    }
+    else
+    {
+        this->sysDialog->show();
+    }
+
 }
 
 void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
@@ -1447,6 +1466,8 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
     else
     {
         this->sysDialog->cancel();
+        this->sysProgressDialog->cancel();
+        this->sysProgressDialog->setProgress(0);
 
         if(this->command_meta_data.sequenceId == SEQUENCE_VERIFY)
         {

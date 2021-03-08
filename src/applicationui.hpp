@@ -36,6 +36,7 @@
 #include <bb/system/SystemPrompt>
 #include <bb/system/SystemUiResult>
 #include <bb/system/SystemToast>
+#include <bb/system/SystemProgressDialog>
 
 #include <bb/device/DisplayInfo>
 
@@ -149,6 +150,7 @@ bb::system::SystemDialog *sysDialog;
 bb::system::SystemPrompt *renamePromt;
 bb::system::SystemPrompt *addFolderPromt;
 bb::system::SystemToast *sysToast;
+bb::system::SystemProgressDialog *sysProgressDialog;
 };
 
 #endif /* ApplicationUI_HPP_ */
