@@ -115,6 +115,8 @@ private slots:
     void onAddFolder();
     void onAddFolderPromtFinished(bb::system::SystemUiResult::Type);
     void onServerPageTextChanged(QString);
+    void onRawCommandReply(int, QString);
+
 signals:
     void verificationFinished();
     void folderListingFinished();

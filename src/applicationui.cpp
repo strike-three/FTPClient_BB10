@@ -1213,6 +1213,7 @@ void ApplicationUI::onSysDialogFinished(bb::system::SystemUiResult::Type result)
 {
     Q_UNUSED(result);
     qDebug()<<"****** Abort ******"<<this->ftp->currentCommand();
+    this->ftp->rawCommand("ABOR");
 }
 
 void ApplicationUI::onAddFolder()
@@ -1253,6 +1254,11 @@ void ApplicationUI::onAddFolderPromtFinished(bb::system::SystemUiResult::Type ad
     }
 }
 
+void ApplicationUI::onRawCommandReply(int code, QString detail)
+{
+    qDebug()<<"Raw command reply code "<<code;
+    qDebug()<<"Raw command reply detail "<<detail;
+}
 /*****************************************************************************
  *                  FTP methods
  * ***************************************************************************/
@@ -1290,6 +1296,9 @@ void ApplicationUI::createFtpInstance()
                                 this, SLOT(onDataTransferProgress(qint64, qint64)));
     Q_ASSERT(res);
 
+    res = QObject::connect(ftp, SIGNAL(rawCommandReply(int, QString)),
+                                this, SLOT(onRawCommandReply(int, QString)));
+    Q_ASSERT(res);
 }
 
 void ApplicationUI::startCommand()
