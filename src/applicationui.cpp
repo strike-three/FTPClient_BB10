@@ -55,13 +55,11 @@ ApplicationUI::ApplicationUI() :
 
     this->displayInfo = new bb::device::DisplayInfo();
     this->invokemanager = new bb::system::InvokeManager();
-    this->sysDialog = new bb::system::SystemDialog(NULL, "Hide");
+    this->sysDialog = new bb::system::SystemDialog(NULL, "Cancel");
     this->sysDialog->setActivityIndicatorVisible(true);
     this->sysDialog->setButtonAreaLimit(1);
 
     this->sysToast = new bb::system::SystemToast();
-
-    this->ftp = new QFtp();
 
     this->list = 0;
     this->label = new Label();
@@ -243,6 +241,7 @@ void ApplicationUI::popFinished(bb::cascades::Page *page)
     {
         qDebug()<<"Remove page "<<page->objectName();
         this->initCommandMetaData();
+        this->ftp->deleteLater();
         page->deleteLater();
     }
     this->label->setText("Pop finished");
@@ -878,36 +877,54 @@ void ApplicationUI::onContentItemTriggered(QVariantList index)
 
 void ApplicationUI::onCustomBackButton()
 {
-
-    if(!this->commandMetaData->listingRootFolder())
+    /* Differentiate between logged in and not logged in status */
+    if(this->ftp->state() <= QFtp::Connecting)
     {
-        this ->commandMetaData->removeFromListPath();
-        this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
-        if(this->ftp->state() < QFtp::LoggedIn)
-        {
-            this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
-            this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
-            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
-            this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
-        }
-        else
-        {
-            this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
-            this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
-        }
+        /* Not connected hence do not need to close connection
+         * pop the navigation pane */
+        this->navigationPane->pop();
+    }
+    else if(this->ftp->state() == QFtp::Connected)
+    {
+        qDebug()<<"Custom back button connected sequence close";
+        this->command_meta_data.sequenceId = SEQUENCE_CLOSE;
+        this->commandMetaData->addActiontoSequence(ACTION_DISCONNECT);
         this->startCommand();
     }
     else
     {
-        this->command_meta_data.sequenceId = SEQUENCE_CLOSE;
-        this->commandMetaData->addActiontoSequence(ACTION_DISCONNECT);
-        this->startCommand();
+        if(!this->commandMetaData->listingRootFolder())
+        {
+            qDebug()<<"Custom back button loggedin listing folder";
+            this ->commandMetaData->removeFromListPath();
+            this->command_meta_data.sequenceId = SEQUENCE_LIST_FOLDER;
+            if(this->ftp->state() < QFtp::LoggedIn)
+            {
+                this->commandMetaData->addActiontoSequence(ACTION_CONNECT);
+                this->commandMetaData->addActiontoSequence(ACTION_LOGIN);
+                this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
+                this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
+            }
+            else
+            {
+                this->commandMetaData->addActiontoSequence(ACTION_CD_WORKING_DIR);
+                this->commandMetaData->addActiontoSequence(ACTION_LIST_FOLDER);
+            }
+            this->startCommand();
+        }
+        else
+        {
+            qDebug()<<"Custom back button loggedin sequence close";
+            this->command_meta_data.sequenceId = SEQUENCE_CLOSE;
+            this->commandMetaData->addActiontoSequence(ACTION_DISCONNECT);
+            this->startCommand();
+        }
     }
 }
 
 void ApplicationUI::onDataTransferProgress(qint64 done, qint64 total)
 {
-    qDebug()<<"Transfered "<<done<<" of "<<total;
+//    qDebug()<<"Transfered "<<done<<" of "<<total;
 }
 
 void ApplicationUI::onItemDownload()
@@ -1194,8 +1211,8 @@ void ApplicationUI::onRenamePromtFinished(bb::system::SystemUiResult::Type renam
 
 void ApplicationUI::onSysDialogFinished(bb::system::SystemUiResult::Type result)
 {
-    qDebug()<<"****** Abort ******";
-    this->ftp->rawCommand("ABOR");
+    Q_UNUSED(result);
+    qDebug()<<"****** Abort ******"<<this->ftp->currentCommand();
 }
 
 void ApplicationUI::onAddFolder()
@@ -1401,10 +1418,16 @@ void ApplicationUI::onFtpCommandFinished(int cmdId, bool error)
 
     if(error)
     {
-        qDebug()<<"Error occured "<<this->ftp->error()<<this->ftp->errorString();
+        qDebug()<<"Error occured "<<this->ftp->currentCommand();
         this->command_meta_data.error = error;
         this->command_meta_data.errorString = this->ftp->errorString();
         this->commandMetaData->emptySequence();
+
+        this->sysDialog->cancel();
+
+        this->sysToast->setBody(this->ftp->errorString());
+        this->sysToast->show();
+
     }
 
     if(!this->commandMetaData->isSequenceEmpty())
