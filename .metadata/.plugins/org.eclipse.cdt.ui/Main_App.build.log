@@ -1,0 +1,42 @@
+16:40:13 **** Build of configuration Device-Release for project Main_App ****
+make -j4 Device-Release 
+make -C .//translations -f Makefile update
+cd arm && /home/aranade/Work/BBDevelopment/bbndk/host_10_3_1_12/linux/x86/usr/bin/qmake -spec blackberry-armv7le-qcc ../Main_App.pro CONFIG+=debug_and_release CONFIG+=device
+make[1]: Entering directory '/Data/bb10_dev/FTP_Client/Main_App/translations'
+/home/aranade/Work/BBDevelopment/bbndk/host_10_3_1_12/linux/x86/usr/bin/lupdate Main_App.pro
+Updating 'Main_App.ts'...
+    Found 2 source text(s) (0 new and 2 already existing)
+make[1]: Leaving directory '/Data/bb10_dev/FTP_Client/Main_App/translations'
+make -C .//translations -f Makefile release
+make[1]: Entering directory '/Data/bb10_dev/FTP_Client/Main_App/translations'
+/home/aranade/Work/BBDevelopment/bbndk/host_10_3_1_12/linux/x86/usr/bin/lrelease Main_App.pro
+Updating '/Data/bb10_dev/FTP_Client/Main_App/translations/Main_App.qm'...
+    Generated 0 translation(s) (0 finished and 0 unfinished)
+    Ignored 2 untranslated source text(s)
+make[1]: Leaving directory '/Data/bb10_dev/FTP_Client/Main_App/translations'
+make -C ./arm -f Makefile release
+make[1]: Entering directory '/Data/bb10_dev/FTP_Client/Main_App/arm'
+make -f Makefile.Release
+make[2]: Entering directory '/Data/bb10_dev/FTP_Client/Main_App/arm'
+/home/aranade/Work/BBDevelopment/bbndk/host_10_3_1_12/linux/x86/usr/bin/moc -DQT_NO_IMPORT_QT47_QML -DQ_OS_BLACKBERRY -D_FORTIFY_SOURCE=2 -DQT_NO_DEBUG -DQT_DECLARATIVE_LIB -DQT_CORE_LIB -DQT_SHARED -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/share/qt4/mkspecs/blackberry-armv7le-qcc -I../../Main_App -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4/QtCore -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4/QtDeclarative -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4 -Io.le-v7/.moc -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/bb1 -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/freetype2 -I. -D__QNXNTO__ ../src/applicationui.hpp -o o.le-v7/.moc/moc_applicationui.cpp
+qcc -Vgcc_ntoarmv7le -Wno-psabi -lang-c++ -fstack-protector -fstack-protector-all -mcpu=cortex-a9 -O2 -Wno-psabi -fstack-protector-strong -fvisibility=hidden -mthumb -Os -Wall -W -D_REENTRANT -fPIC -shared -DQT_NO_IMPORT_QT47_QML -DQ_OS_BLACKBERRY -D_FORTIFY_SOURCE=2 -DQT_NO_DEBUG -DQT_DECLARATIVE_LIB -DQT_CORE_LIB -DQT_SHARED -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/share/qt4/mkspecs/blackberry-armv7le-qcc -I../../Main_App -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4/QtCore -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4/QtDeclarative -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4 -Io.le-v7/.moc -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/bb1 -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/freetype2 -I. -x c++-header -c ../precompiled.h -o o.le-v7/.obj/Main_App.gch/c++
+qcc -Vgcc_ntoarmv7le -c -Wc,-include -Wc,o.le-v7/.obj/Main_App -Wno-psabi -lang-c++ -fstack-protector -fstack-protector-all -mcpu=cortex-a9 -O2 -Wno-psabi -fstack-protector-strong -fvisibility=hidden -mthumb -Os -Wall -W -D_REENTRANT -fPIC -shared -DQT_NO_IMPORT_QT47_QML -DQ_OS_BLACKBERRY -D_FORTIFY_SOURCE=2 -DQT_NO_DEBUG -DQT_DECLARATIVE_LIB -DQT_CORE_LIB -DQT_SHARED -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/share/qt4/mkspecs/blackberry-armv7le-qcc -I../../Main_App -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4/QtCore -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4/QtDeclarative -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4 -Io.le-v7/.moc -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/bb1 -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/freetype2 -I. -o o.le-v7/.obj/applicationui.o ../src/applicationui.cpp
+qcc -Vgcc_ntoarmv7le -c -Wc,-include -Wc,o.le-v7/.obj/Main_App -Wno-psabi -lang-c++ -fstack-protector -fstack-protector-all -mcpu=cortex-a9 -O2 -Wno-psabi -fstack-protector-strong -fvisibility=hidden -mthumb -Os -Wall -W -D_REENTRANT -fPIC -shared -DQT_NO_IMPORT_QT47_QML -DQ_OS_BLACKBERRY -D_FORTIFY_SOURCE=2 -DQT_NO_DEBUG -DQT_DECLARATIVE_LIB -DQT_CORE_LIB -DQT_SHARED -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/share/qt4/mkspecs/blackberry-armv7le-qcc -I../../Main_App -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4/QtCore -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4/QtDeclarative -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4 -Io.le-v7/.moc -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/bb1 -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/freetype2 -I. -o o.le-v7/.obj/main.o ../src/main.cpp
+qcc -Vgcc_ntoarmv7le -c -Wc,-include -Wc,o.le-v7/.obj/Main_App -Wno-psabi -lang-c++ -fstack-protector -fstack-protector-all -mcpu=cortex-a9 -O2 -Wno-psabi -fstack-protector-strong -fvisibility=hidden -mthumb -Os -Wall -W -D_REENTRANT -fPIC -shared -DQT_NO_IMPORT_QT47_QML -DQ_OS_BLACKBERRY -D_FORTIFY_SOURCE=2 -DQT_NO_DEBUG -DQT_DECLARATIVE_LIB -DQT_CORE_LIB -DQT_SHARED -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/share/qt4/mkspecs/blackberry-armv7le-qcc -I../../Main_App -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4/QtCore -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4/QtDeclarative -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/qt4 -Io.le-v7/.moc -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/bb1 -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include -I/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/usr/include/freetype2 -I. -o o.le-v7/.obj/moc_applicationui.o o.le-v7/.moc/moc_applicationui.cpp
+rm -f libMain_App.so.1.0.0 libMain_App.so libMain_App.so.1 libMain_App.so.1.0
+qcc -Vgcc_ntoarmv7le -lang-c++ -Wl,-rpath-link,/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/armle-v7/lib -Wl,-rpath-link,/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/armle-v7/usr/lib -Wl,-rpath-link,/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/armle-v7/usr/lib/qt4/lib -Wl,-O1 -Wl,-rpath-link,/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/armle-v7/usr/lib/qt4/lib -Wl,-z,relro -Wl,-soname,Main_App.so -shared -Wl,-z,relro -Wl,-z,now -o libMain_App.so.1.0.0 o.le-v7/.obj/applicationui.o o.le-v7/.obj/main.o o.le-v7/.obj/moc_applicationui.o   -L/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/armle-v7/usr/lib/bb1 -L/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/armle-v7/lib -L/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/armle-v7/usr/lib -L/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6/armle-v7/usr/lib/qt4/lib -L/home/aranade/Work/BBDevelopment/bbndk/target_10_3_1_995/qnx6//usr/lib/qt4/lib -lbbcascades -lQtDeclarative -lQtScript -lQtSvg -lQtSql -lsqlite3 -lz -lQtXmlPatterns -lQtGui -lQtNetwork -lsocket -lQtCore -lm -lbps  
+ln -s libMain_App.so.1.0.0 libMain_App.so
+ln -s libMain_App.so.1.0.0 libMain_App.so.1
+ln -s libMain_App.so.1.0.0 libMain_App.so.1.0
+rm -f o.le-v7/libMain_App.so.1.0.0
+rm -f o.le-v7/libMain_App.so
+rm -f o.le-v7/libMain_App.so.1
+rm -f o.le-v7/libMain_App.so.1.0
+mv -f libMain_App.so.1.0.0 libMain_App.so libMain_App.so.1 libMain_App.so.1.0 o.le-v7/
+echo && ntoarm-objcopy --only-keep-debug o.le-v7/libMain_App.so.1.0.0 o.le-v7/Main_App.so.sym && ntoarm-objcopy --strip-all -R.ident --add-gnu-debuglink o.le-v7/Main_App.so.sym o.le-v7/libMain_App.so.1.0.0 o.le-v7/Main_App.so
+
+make[2]: Leaving directory '/Data/bb10_dev/FTP_Client/Main_App/arm'
+make[1]: Leaving directory '/Data/bb10_dev/FTP_Client/Main_App/arm'
+
+16:40:15 Build Finished (took 1s.819ms)
+

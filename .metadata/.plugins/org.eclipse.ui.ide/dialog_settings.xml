@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<list key="installedFeatures">
+		<item value="com.qnx.tools.bbt.ide.e4:1.0.0.v201503051610"/>
+		<item value="com.qnx.tools.bbt.ide:10.3.1.v201503051610"/>
+		<item value="com.qnx.tools.ide.SystemProfiler:5.0.0.v201502051920"/>
+		<item value="com.qnx.tools.ide.bbt:10.3.1.v201502232117"/>
+		<item value="com.qnx.tools.ide.builder:5.0.0.v201502051920"/>
+		<item value="com.qnx.tools.ide.coverage:5.0.0.v201502051920"/>
+		<item value="com.qnx.tools.ide.mat:5.0.0.v201502051920"/>
+		<item value="com.qnx.tools.ide.mudflap:5.0.0.v201502051920"/>
+		<item value="com.qnx.tools.ide.profiler2:5.0.0.v201502051920"/>
+		<item value="com.qnx.tools.ide.qde:5.0.0.v201502240705"/>
+		<item value="com.qnx.tools.ide.sysinfo:5.0.0.v201502051920"/>
+		<item value="com.qnx.tools.ide.terminal:5.0.0.v201502051920"/>
+		<item value="com.qnx.tools.ide.updater:5.0.0.v201502051920"/>
+		<item value="com.qnx.tools.ide:5.0.0.v201502091930"/>
+		<item value="com.rim.tad.tools.qml.feature:10.3.1.v201502240407"/>
+		<item value="gnu.io.rxtx:2.1.7.4_v20071016-7B57e7UAXMAAqGAGf"/>
+		<item value="org.eclipse.cdt.debug.gdbjtag:8.3.0.201405281107"/>
+		<item value="org.eclipse.cdt.gdb:8.3.0.201405281107"/>
+		<item value="org.eclipse.cdt:8.3.0.201405281107"/>
+		<item value="org.eclipse.cvs:1.4.0.v20140221-1700"/>
+		<item value="org.eclipse.egit:3.2.0.201312181205-r"/>
+		<item value="org.eclipse.emf.common.ui:2.8.0.v20140203-1126"/>
+		<item value="org.eclipse.emf.common:2.9.2.v20131212-0545"/>
+		<item value="org.eclipse.emf.databinding.edit:1.3.0.v20140203-1126"/>
+		<item value="org.eclipse.emf.databinding:1.3.0.v20140203-1126"/>
+		<item value="org.eclipse.emf.ecore.edit:2.8.0.v20140203-1126"/>
+		<item value="org.eclipse.emf.ecore:2.9.2.v20131212-0545"/>
+		<item value="org.eclipse.emf.edit.ui:2.9.0.v20140203-1126"/>
+		<item value="org.eclipse.emf.edit:2.9.0.v20140203-1126"/>
+		<item value="org.eclipse.emf.mapping.ecore:2.7.0.v20140203-1126"/>
+		<item value="org.eclipse.emf.mapping:2.7.0.v20140203-1126"/>
+		<item value="org.eclipse.help:2.0.2.v20140221-1700"/>
+		<item value="org.eclipse.jgit:3.2.0.201312181205-r"/>
+		<item value="org.eclipse.ocl:3.3.0.v20140120-1508"/>
+		<item value="org.eclipse.platform:4.3.2.v20140221-1852"/>
+		<item value="org.eclipse.rcp:4.3.2.v20140221-1700"/>
+		<item value="org.eclipse.tm.terminal.serial:2.0.0.v201303202014"/>
+		<item value="org.eclipse.tm.terminal.ssh:2.0.0.v201304161551"/>
+		<item value="org.eclipse.tm.terminal.telnet:2.0.0.v201304161551"/>
+		<item value="org.eclipse.tm.terminal.view:2.0.0.v201304161551"/>
+		<item value="org.eclipse.tm.terminal:2.0.0.v201407142305"/>
+		<item value="org.eclipse.xsd:2.9.1.v20140203-1126"/>
+	</list>
+	<section name="ChooseWorkspaceDialogSettings">
+		<item value="160" key="DIALOG_Y_ORIGIN"/>
+		<item value="387" key="DIALOG_X_ORIGIN"/>
+	</section>
+	<section name="WORKBENCH_SETTINGS">
+		<list key="ENABLED_TRANSFERS">
+		</list>
+	</section>
+</section>

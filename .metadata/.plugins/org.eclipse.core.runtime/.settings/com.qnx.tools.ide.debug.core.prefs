@@ -1,0 +1,8 @@
+com.qnx.tools.ide.debug.core.launchConfigs/Client/com.qnx.tools.ide.debug.core.activeMode=debug
+com.qnx.tools.ide.debug.core.launchConfigs/Client/com.qnx.tools.ide.debug.core.activeTarget=BLACKBERRY-red
+com.qnx.tools.ide.debug.core.launchConfigs/Main_App/com.qnx.tools.ide.debug.core.activeMode=run
+com.qnx.tools.ide.debug.core.launchConfigs/Main_App/com.qnx.tools.ide.debug.core.activeTarget=BLACKBERRY-red
+com.qnx.tools.ide.debug.core.launchConfigs/Upload/com.qnx.tools.ide.debug.core.activeMode=debug
+com.qnx.tools.ide.debug.core.launchConfigs/Upload/com.qnx.tools.ide.debug.core.activeTarget=BLACKBERRY-red
+com.qnx.tools.ide.debug.core.toolBar.activeConfig=Upload
+eclipse.preferences.version=1

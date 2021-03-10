@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Copy 1 elements(s) to &apos;Upload&apos;&#x0A;- Original project: &apos;Main_App&apos;&#x0A;- Destination element: &apos;Upload&apos;&#x0A;- Original element: &apos;assets&apos;" description="Copy folder" element1="assets" files="0" flags="589830" folders="1" id="org.eclipse.wst.jsdt.ui.copy" log="assets&#x09;true&#x09;false" policy="org.eclipse.wst.jsdt.ui.copyResources" stamp="1612624946002" target="/Upload" units="0" version="1.0"/>
+</session>

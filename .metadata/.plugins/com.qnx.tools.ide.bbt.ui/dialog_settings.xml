@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item value="${workspace_loc:Upload/arm/o.le-v7/Upload.so}" key="com.qnx.tools.ide.bbt.internal.ui.helpers.AssetSelectionDialog"/>
+</section>
