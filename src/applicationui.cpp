@@ -34,6 +34,11 @@
 #include <bb/cascades/TitleBar>
 #include <bb/cascades/StackLayoutProperties>
 #include <bb/cascades/NavigationPaneProperties>
+#include <bb/cascades/SceneCover>
+#include <bb/cascades/ImageView>
+#include <bb/cascades/Menu>
+#include <bb/cascades/HelpActionItem>
+#include <bb/cascades/SettingsActionItem>
 
 #include <bb/data/JsonDataAccess>
 
@@ -63,6 +68,8 @@ ApplicationUI::ApplicationUI() :
     this->sysProgressDialog->setAutoUpdateEnabled(true);
 
     this->sysToast = new bb::system::SystemToast();
+
+    this->ftp = 0;
 
     this->list = 0;
     this->label = new Label();
@@ -101,6 +108,17 @@ ApplicationUI::ApplicationUI() :
     this->listViewDataModel.clear();
     this->readAccountInfo();
 
+    this->renderActiveFrame();
+
+    Menu *appMenu = new Menu();
+    HelpActionItem *help = new HelpActionItem();
+    SettingsActionItem *settings = new SettingsActionItem();
+
+    appMenu->setHelpAction(help);
+    appMenu->setSettingsAction(settings);
+
+    Application::instance()->setMenu(appMenu);
+
     switch(this->invokemanager->startupMode())
     {
         case bb::system::ApplicationStartupMode::LaunchApplication:
@@ -128,8 +146,25 @@ ApplicationUI::ApplicationUI() :
 
 ApplicationUI::~ApplicationUI()
 {
-    delete this->ftp;
-    delete this->sysDialog;
+    if(this->ftp)
+    {
+        delete this->ftp;
+    }
+
+    if(this->sysDialog)
+    {
+        delete this->sysDialog;
+    }
+
+    if(this->sysProgressDialog)
+    {
+        delete this->sysProgressDialog;
+    }
+
+    if(this->sysToast)
+    {
+        delete this->sysToast;
+    }
     delete this->label;
 }
 
@@ -315,6 +350,8 @@ void ApplicationUI::renderServerListPage(bb::cascades::Page *page)
 
 void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, int index)
 {
+    TitleBar *titlebar = new TitleBar(TitleBarScrollBehavior::Sticky, TitleBarKind::Default);
+    titlebar->setTitle("Add account");
     ScrollView *scrollview = ScrollView::create().objectName("Scroll View");
     Container *addServerContainer = Container::create()
                                    .objectName("addServerContainer")
@@ -349,7 +386,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
     addServerContainer->add(serverName);
     addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
 
-    Label *serverCredentials = Label::create("Server Credentials")
+    Label *serverCredentials = Label::create("Server Credentials *")
                                    .objectName("serverCredentials")
                                    .horizontal(HorizontalAlignment::Fill)
                                    .bottomMargin(ui->du(1));
@@ -424,7 +461,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
 
     addServerContainer->add(Divider::create().horizontal(HorizontalAlignment::Fill));
 
-    Label *protocolPort = Label::create("Port")
+    Label *protocolPort = Label::create("Port *")
                            .objectName("protocolPort")
                            .horizontal(HorizontalAlignment::Fill)
                            .bottomMargin(ui->du(1));
@@ -439,7 +476,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                            .inputMode(TextFieldInputMode::NumbersAndPunctuation);
     port->input()->setSubmitKey(SubmitKey::Next);
     port->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Next);
-
+    port->setText("21");
     res = QObject::connect(port, SIGNAL(textChanged(QString)), this, SLOT(onServerPageTextChanged(QString)));
 
     Q_ASSERT(res);
@@ -464,7 +501,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
                            .inputMode(TextFieldInputMode::Default);
     startPathText->input()->setSubmitKey(SubmitKey::Done);
     startPathText->input()->setSubmitKeyFocusBehavior(SubmitKeyFocusBehavior::Lose);
-
+    startPathText->setText("/");
     res = QObject::connect(startPathText, SIGNAL(textChanged(QString)), this, SLOT(onServerPageTextChanged(QString)));
 
     Q_ASSERT(res);
@@ -520,6 +557,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
 
     if(prefill)
     {
+        titlebar->setTitle("Edit account");
         QVariantMap map = this->listViewDataModel.value(index).toMap();
         serverName->setText(map["name"].toString());
         serverUrl->setText(map["url"].toString());
@@ -540,6 +578,7 @@ void ApplicationUI::renderAddServerPage(bb::cascades::Page *page, bool prefill, 
         operation->setText("editEntry");
         entryindex->setText(QString::number(index));
     }
+    page->setTitleBar(titlebar);
 }
 
 void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
@@ -665,6 +704,28 @@ void ApplicationUI::renderContentsPage(bb::cascades::Page *page)
     this->startCommand();
 
 }
+
+void ApplicationUI::renderActiveFrame()
+{
+    Container *activeFrameContainer = Container::create()
+                                        .horizontal(HorizontalAlignment::Fill)
+                                        .vertical(VerticalAlignment::Fill)
+                                        .background(Color::fromARGB(0xFFFFa929))
+                                        .layout(DockLayout::create());
+
+    UIConfig *ui = activeFrameContainer->ui();
+
+    SceneCover *cover = SceneCover::create().content(activeFrameContainer);
+
+    ImageView *coverImage = ImageView::create("asset:///images/activeFrame.png")
+                            .scalingMethod(ScalingMethod::AspectFit)
+                            .horizontal(HorizontalAlignment::Center)
+                            .vertical(VerticalAlignment::Center)
+                            .preferredWidth(ui->du(200));
+
+    activeFrameContainer->add(coverImage);
+    Application::instance()->setCover(cover);
+}
 /*****************************************************************************
  *                  Signals / slots
  * ***************************************************************************/
@@ -700,6 +761,7 @@ void ApplicationUI::onServerEntryDelete()
 void ApplicationUI::onServerSave()
 {
     QVariantMap map;
+
     map["name"] = this->navigationPane->at(1)->findChild<TextField *>("serverName")->text();
     map["url"] = this->navigationPane->at(1)->findChild<TextField *>("serverUrl")->text();
     map["uname"] = this->navigationPane->at(1)->findChild<TextField *>("userName")->text();
@@ -709,25 +771,46 @@ void ApplicationUI::onServerSave()
     map["connstatus"] = true;
     map["startPath"] = this->navigationPane->at(1)->findChild<TextField *>("startPathText")->text();
 
-    if(this->navigationPane->at(1)->findChild<TextField *>("operation")->text()
-            .compare("editEntry") == 0)
+    if((map["url"].toString().trimmed().size() > 0) &&
+        (map["uname"].toString().trimmed().size() > 0) &&
+        (map["password"].toString().trimmed().size() > 0) &&
+        (map["port"].toString().trimmed().size() > 0))
     {
-        qDebug()<<"removing entry at "<<this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt();
-        this->listViewDataModel.removeAt(
-        this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt());
 
-        qDebug()<<this->listViewDataModel.size();
+        if(map["name"].toString().trimmed().size() == 0)
+        {
+            map["name"] = "Untitled";
+        }
+
+        if(map["startPath"].toString().trimmed().size() == 0)
+        {
+            map["name"] = "/";
+        }
+        if(this->navigationPane->at(1)->findChild<TextField *>("operation")->text()
+                .compare("editEntry") == 0)
+        {
+            qDebug()<<"removing entry at "<<this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt();
+            this->listViewDataModel.removeAt(
+            this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt());
+
+            qDebug()<<this->listViewDataModel.size();
+        }
+
+        qDebug()<<"inserting entry at "<<this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt();
+        this->listViewDataModel.insert(this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt(),
+                                        (QVariant)map);
+
+        this->saveAccountInfo();
+        this->listViewDataModel.clear();
+        this->readAccountInfo();
+
+        this->navigationPane->at(1)->findChild<Button *>("saveButton")->setEnabled(false);
     }
-
-    qDebug()<<"inserting entry at "<<this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt();
-    this->listViewDataModel.insert(this->navigationPane->at(1)->findChild<TextField *>("entryIndex")->text().toInt(),
-                                    (QVariant)map);
-
-    this->saveAccountInfo();
-    this->listViewDataModel.clear();
-    this->readAccountInfo();
-
-    this->navigationPane->at(1)->findChild<Button *>("saveButton")->setEnabled(false);
+    else
+    {
+        this->sysToast->setBody("Required fields cannot be empty");
+        this->sysToast->show();
+    }
 }
 
 
@@ -806,6 +889,7 @@ void ApplicationUI::onServerTriggered(QVariantList index)
 
 void ApplicationUI::onProtocolSelected(int index)
 {
+    qDebug()<<"Protocol changed";
     this->navigationPane->top()->findChild<TextField *>("port")->setLocallyFocused(true);
     if(index == FTP_PROTOCOL)
     {

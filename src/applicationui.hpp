@@ -126,6 +126,7 @@ private:
 void renderServerListPage(bb::cascades::Page*);
 void renderAddServerPage(bb::cascades::Page*, bool, int);
 void renderContentsPage(bb::cascades::Page*);
+void renderActiveFrame();
 int32_t readAccountInfo();
 void saveAccountInfo();
 void createFtpInstance();

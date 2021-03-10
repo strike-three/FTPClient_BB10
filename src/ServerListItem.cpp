@@ -52,7 +52,7 @@ ServerListItem::ServerListItem()
 //    labelContainer->setBackground(Color::Red);
     labelContainer->setLayout(DockLayout::create());
     labelContainer->setLayoutProperties(StackLayoutProperties::create()
-                                            .spaceQuota(3));
+                                            .spaceQuota(4));
 
     ui = labelContainer->ui();
     labelContainer->setBottomPadding(ui->du(0.6));
@@ -72,24 +72,10 @@ ServerListItem::ServerListItem()
     this->serverUrl->textStyle()->setFontSize(FontSize::XSmall);
     this->serverUrl->textStyle()->setFontWeight(FontWeight::W200);
 
-    Container *connStatusContainer = new Container();
-    connStatusContainer->setVerticalAlignment(VerticalAlignment::Fill);
-    connStatusContainer->setLayout(DockLayout::create());
-    connStatusContainer->setLayoutProperties(StackLayoutProperties::create()
-                                            .spaceQuota(1));
-//    connStatusContainer->setBackground(Color::Yellow);
-
-    this->statusImage = new ImageView();
-    this->statusImage->setImage(Image("asset:///ic_done.amd"));
-    this->statusImage->setHorizontalAlignment(HorizontalAlignment::Center);
-    this->statusImage->setScalingMethod(ScalingMethod::AspectFit);
-    connStatusContainer->add(this->statusImage);
-
     labelContainer->add(this->serverName);
     labelContainer->add(this->serverUrl);
     serverItemContainer->add(logoContainer);
     serverItemContainer->add(labelContainer);
-    serverItemContainer->add(connStatusContainer);
     setContent(serverItemContainer);
 }
 
@@ -99,14 +85,4 @@ void ServerListItem::updateListItem(const QVariant &data)
     this->serverName->setText(map["name"].toString());
     this->serverUrl->setText(map["url"].toString());
 
-    if(map["connstatus"].toBool())
-    {
-        this->statusImage->setImage("asset:///ic_done.amd");
-        this->statusImage->setFilterColor(Color::Green);
-    }
-    else
-    {
-        this->statusImage->setImage("asset:///ic_incomplete.amd");
-        this->statusImage->setFilterColor(Color::Red);
-    }
 }
