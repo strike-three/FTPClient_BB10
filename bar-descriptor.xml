@@ -56,7 +56,7 @@
 
     <!-- Fourth digit segment of the package version. First three segments are taken from the
          <versionNumber> element.  Must be an integer from 0 to 2^16-1 -->
-    <buildId>0</buildId>
+    <buildId>1</buildId>
 
     <!-- A string value (such as "v1", "2.5", or "Alpha 1") that represents the version of the application, as it should be shown to users. Optional. -->
     <!-- <versionLabel></versionLabel> -->
@@ -124,6 +124,6 @@
     <permission system="true">run_native</permission>
     <permission>access_shared</permission>
     <env var="LD_LIBRARY_PATH" value="app/native/lib:/usr/lib/qt4/lib"/>
-    <env var="CASCADES_THEME" value="bright?primaryColor=0xFFA929&amp;primaryBase=0xF6E00E"/>
+    <env var="CASCADES_THEME" value="default?primaryColor=0xFFA929&amp;primaryBase=0xF6E00E"/>
 
 </qnx>

@@ -23,7 +23,6 @@
 #include <bb/cascades/Color>
 #include <bb/cascades/DockLayout>
 #include <bb/cascades/StackLayout>
-#include <bb/cascades/ActionItem>
 #include <bb/cascades/TextField>
 #include <bb/cascades/DropDown>
 #include <bb/cascades/ScrollView>
@@ -36,7 +35,11 @@
 #include <bb/cascades/NavigationPaneProperties>
 #include <bb/cascades/SceneCover>
 #include <bb/cascades/ImageView>
-#include <bb/cascades/Menu>
+#include <bb/cascades/Theme>
+#include <bb/cascades/ThemeSupport>
+#include <bb/cascades/ColorTheme>
+#include <bb/cascades/VisualStyle>
+
 #include <bb/cascades/HelpActionItem>
 #include <bb/cascades/SettingsActionItem>
 
@@ -110,12 +113,14 @@ ApplicationUI::ApplicationUI() :
 
     this->renderActiveFrame();
 
-    Menu *appMenu = new Menu();
-    HelpActionItem *help = new HelpActionItem();
-    SettingsActionItem *settings = new SettingsActionItem();
+    appMenu = new Menu();
 
-    appMenu->setHelpAction(help);
-    appMenu->setSettingsAction(settings);
+    changeTheme = ActionItem::create()
+                                .onTriggered(this, SLOT(onToggleTheme()));
+
+    this->initAppTheme();
+
+    appMenu->addAction(changeTheme);
 
     Application::instance()->setMenu(appMenu);
 
@@ -233,6 +238,46 @@ void ApplicationUI::saveAccountInfo()
     accountFile.close();
 }
 
+void ApplicationUI::initAppTheme()
+{
+    QString firstTimePath = QDir::currentPath() + FIRST_TIME_FLAG_PATH;
+    QFile firstTimeFlag(firstTimePath);
+
+    QString darkThemeFlagPath = QDir::currentPath() + DARK_THEME_FLAG_PATH;
+    QFile darkThemeFlag(darkThemeFlagPath);
+
+
+    if(firstTimeFlag.exists())
+    {
+        /* Check if darkThemeFLag exists */
+        if(darkThemeFlag.exists())
+        {
+            this->changeTheme->setTitle("Bright Theme");
+        }
+        else
+        {
+            this->changeTheme->setTitle("Dark Theme");
+        }
+    }
+    else
+    {
+        /* Get the current theme and set the text */
+        firstTimeFlag.open(QIODevice::ReadWrite);
+        firstTimeFlag.close();
+
+        if(Application::instance()->themeSupport()->theme()->colorTheme()->style() == VisualStyle::Dark)
+        {
+            this->changeTheme->setTitle("Bright Theme");
+            darkThemeFlag.open(QIODevice::ReadWrite);
+            darkThemeFlag.close();
+        }
+        else
+        {
+            this->changeTheme->setTitle("Dark Theme");
+        }
+    }
+
+}
 /*****************************************************************************
  *                  Push / Pop signals from Navigation pane
  * ***************************************************************************/
@@ -729,6 +774,30 @@ void ApplicationUI::renderActiveFrame()
 /*****************************************************************************
  *                  Signals / slots
  * ***************************************************************************/
+void ApplicationUI::onToggleTheme()
+{
+    QString filePath = QDir::currentPath() + DARK_THEME_FLAG_PATH;
+    QFile themeFlag(filePath);
+
+    if(themeFlag.exists())
+    {
+        if(themeFlag.remove())
+        {
+            Application::instance()->themeSupport()->setVisualStyle(VisualStyle::Bright);
+            this->changeTheme->setTitle("Dark Theme");
+        }
+    }
+    else
+    {
+        if(themeFlag.open(QIODevice::ReadWrite))
+        {
+            Application::instance()->themeSupport()->setVisualStyle(VisualStyle::Dark);
+            themeFlag.close();
+            this->changeTheme->setTitle("Bright Theme");
+        }
+    }
+
+}
 
 void ApplicationUI::addServerPressed()
 {

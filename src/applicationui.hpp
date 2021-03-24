@@ -30,6 +30,8 @@
 #include <bb/cascades/GroupDataModel>
 #include <bb/cascades/ListView>
 #include <bb/cascades/Label>
+#include <bb/cascades/Menu>
+#include <bb/cascades/ActionItem>
 
 #include <bb/system/InvokeManager>
 #include <bb/system/InvokeRequest>
@@ -47,6 +49,9 @@
 using namespace bb::cascades;
 
 #define ACCOUNT_INFO_FILE_PATH      "/data/accounts.json"
+#define FIRST_TIME_FLAG_PATH        "/data/firstTime"
+#define DARK_THEME_FLAG_PATH        "/data/darkTheme"
+
 #define FTP_PROTOCOL    0
 #define SFTP_PROTOCOL   1
 
@@ -82,6 +87,7 @@ public:
 public slots:
     void onInvoke(const bb::system::InvokeRequest&);
 private slots:
+    void onToggleTheme();
     void addServerPressed();
     void pushFinished(bb::cascades::Page*);
     void popFinished(bb::cascades::Page*);
@@ -132,6 +138,7 @@ void saveAccountInfo();
 void createFtpInstance();
 void startCommand();
 void initCommandMetaData();
+void initAppTheme();
 struct command_meta_data_t command_meta_data;
 CommandMetaData *commandMetaData;
 
@@ -145,6 +152,8 @@ QFtp *ftp;
 bool card;
 QUrl invokeuri;
 QVariantList selectedIndex;
+Menu *appMenu;
+ActionItem *changeTheme;
 bb::system::InvokeManager *invokemanager;
 bb::device::DisplayInfo *displayInfo;
 bb::system::SystemDialog *sysDialog;
